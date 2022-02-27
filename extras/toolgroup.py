@@ -5,8 +5,10 @@
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging
 
-class Tool:
-    def __init__(self, config, extruder_num):
+class ToolGroup:
+    Physical     = 1 # Physical tool 
+    Virtual      = 2 # Virtual tool that has a Physical tool parent. If tool is parent tool it can be the same as virtual. Requred on virtual tool and on physical tool holding virtual tools.
+    def __init__(self, config):
         self.printer = config.get_printer()
         #self.name = config.get_name().split()[-1]
         self.name = config.get_name().split(' ')[1]
@@ -16,17 +18,10 @@ class Tool:
                     "Name of section '%s' contains illegal characters. Use only integer tool number."
                     % (config.get_name()))
 
-        # ToolType, defaults to 0. Check if tooltype is defined.
-        self.tooltype = 'tooltype ' + str(config.getint('tool_type', 0))
-        if config.has_section(self.tooltype):
-            self.tooltype = self.printer.lookup_object(self.tooltype)
-        else:
-            raise config.error(
-                    "Tooltype of '%s' is not defined. It must be configured before the tool."
-                    % (config.get_name()))
 
-        self.type = self.tooltype.Physical
-        self.ercf_physical_tool = 0             # Physical tool for the ERCF. This is parent tool and can be same as virtual. Requred on virtual tool and on physical tool holding virtual tools.
+        #self.type = ToolType.Physical
+        #self.ercf_physical_tool = 0             # Physical tool for the ERCF. This is parent tool and can be same as virtual. Requred on virtual tool and on physical tool holding virtual tools.
+        #self.physical_parent = None
         #self.zone_x = 0                         # X to do a fast approach for when parked. Requred on Physical tool
         #self.zone_y = 0                         # Y to do a fast approach for when parked. Requred on Physical tool
         #self.park_x = 0                         # X to do a slow approach for when parked. Requred on Physical tool
@@ -34,8 +29,8 @@ class Tool:
         #self.offset_x = 0                       # Nozzle offset to probe. Requred on Physical tool
         #self.offset_y = 0                       # Nozzle offset to probe. Requred on Physical tool
         #self.offset_z = 0                       # Nozzle offset to probe. Requred on Physical tool
-        #self.fan = "none"           # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
-        #self.extruder = "none"              # Name of extruder connected to this tool. Defaults to "none".
+        #self.fan = None           # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+        #self.extruder = None              # Name of extruder connected to this tool. Defaults to "none".
         #self.meltzonelength = 0                # Length of the meltzone for retracting and inserting filament on toolchange. 18mm for e3d Revo
         #self.heater_state = 0                   # 0 = off, 1 = standby temperature, 2 = active temperature. Placeholder. Requred on Physical tool.
         #self.heater_active_temp = 0             # Temperature to set when in active mode. Placeholder. Requred on Physical and virtual tool if any has extruder.
@@ -47,10 +42,6 @@ class Tool:
         ##self.wipe_silicone_print_side = ""  # Position on the side near printing side of the silicone flap. Must include X or Y. Requred on Physical tool if Wipe Type = 2 or 4.
         #self.placeholder_standby_temp = 0       # Required placeholder if this tool has virtual tools. Holds last used standby temp of physical heater.
 
-        #self.printer = printer
-        #self.eventtime = eventtime
-        #self.printer = config.get_printer()
-
         # G-Code macros
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
 
@@ -61,29 +52,16 @@ class Tool:
                                                           'custom_deselect_gcode', '')
 
         # Register commands
-        gcode = config.get_printer().lookup_object('gcode')
-        gcode.register_command("T" + self.name, self.cmd_SelectTool, desc=self.cmd_SelectTool_help)
-        gcode.register_command("T49", self.cmd_SelectTool49, desc=self.cmd_SelectTool49_help)
-
-
-    cmd_SelectTool_help = "Select T49"
-    def cmd_SelectTool(self, gcmd):
-        gcmd.respond_info("T" + self.name + " Selected.") # + self.get_status()['state'])
-        
-
-    cmd_SelectTool49_help = "Select T49"
-    def cmd_SelectTool49(self, gcmd):
-        gcmd.respond_info("T-" + self.tname + "Selected.") # + self.get_status()['state'])
+        #gcode = config.get_printer().lookup_object('gcode')
+        #gcode.register_command("T" + self.name, self.cmd_SelectTool, desc=self.cmd_SelectTool_help)
+        #gcode.register_command("T49", self.cmd_SelectTool49, desc=self.cmd_SelectTool49_help)
 
 ######################################################################
 # Load Config
 #####################################################################
 def load_config_prefix(config):
-    #printer = config.get_printer()
-    #for i in range(99):
-    #    section = 'tool %d' % (i,)
-    #    if not config.has_section(section):
-    #        continue
-    #    pt = Tool(config.getsection(section), i)
-    #    printer.add_object(section, pt)
-    return Tool(config)
+    return ToolGroup(config)
+
+
+
+
