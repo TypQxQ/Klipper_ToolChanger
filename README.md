@@ -3,11 +3,11 @@
 This are python extras, macros and example config for the
 [Klipper 3D printer firmware](https://github.com/Klipper3d/klipper). I
 originally created this as macros when converting my Jubilee based
-toolchangerfrom RRF and Duet3 to Klipper.
+toolchanger from RRF and Duet3 to Klipper.
 
 I welcome all contribution!
 
-This is still a work in progress. Treat it as a late alpha to early Beta.
+This is still a work in progress. Treat it as a alpha version.
 
 ## Features
 
