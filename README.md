@@ -40,8 +40,17 @@ parameter to specify another tool.
     - Example. Set Standby temperature 30 sec after putting the tool in standby and in Off after 30 minutes of not being activated.
     - Or set to Time to standby to 0.1 for instant standby and Time to Powerdown to 604800 for a having it powered for a week.
     - Usefull when having sporadic toolchanges in a large print.
+  -Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
 
 ## To do:
 * Save pressure avance per tool
 * Change virtual tools code.
 * Mean Layer time Standby mode. - Save time at every layerchange and at toolchange set to mean time of last 3 layers *2 or at last layer *1.5 with a Maximum and a minimum time. Needs to be analyzed further.
+
+## G-Code commands:
+* **TOOL_LOCK**
+* **TOOL_UNLOCK**
+* **T_1** - Unload and park all tools.
+* SET_AND_SAVE_FAN_SPEED
+* TEMPERATURE_WAIT_WITH_TOLERANCE
+* SET_TOOL_TEMPERATURE
