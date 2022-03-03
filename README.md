@@ -51,13 +51,27 @@ parameter to specify another tool.
 * Implement Fan Scale. Can change fan scale for diffrent materials or tools from slicer at toolchange. Maybe max and min too?
 
 ## G-Code commands:
-* `TOOL_LOCK`
-* `TOOL_UNLOCK`
+* `TOOL_LOCK` - Lock command
+* `TOOL_UNLOCK` - Unlock command
 * `T_1` - Unload and park all tools.
-* `SET_AND_SAVE_FAN_SPEED`
-* `TEMPERATURE_WAIT_WITH_TOLERANCE`
-* `SET_TOOL_TEMPERATURE`
-* `Tn` - A select command is created for each tool.
+* `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of selected or current tool if no `TOOL` supplied. Then save to be recovered at ToolChange.
+  * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
+  * `P` - Fan of this tool. Default current tool.
+* `TEMPERATURE_WAIT_WITH_TOLERANCE` - Waits for all temperatures, or a specified tool or heater's temperature.
+This command can be used without any additional parameters. Without parameters it waits for bed and current extruder. Only one of either TOOL or HEATER may be used.
+  - TOOL=nnn Tool number.
+  - HEATER=nnn Heater number. 0="heater_bed", 1="extruder", 2="extruder1", etc.
+  - TOLERANCE=nnn Tolerance in degC. Defaults to 1*C. Wait will wait until heater is between set temperature +/- tolerance.
+* `SET_TOOL_TEMPERATURE` - Set tool temperature.
+  * TOOL= Tool number, optional. If this parameter is not provided, the current tool is used.
+  * STDB_TMP= Standby temperature(s), optional
+  * ACTV_TMP= Active temperature(s), optional
+  * CHNG_STATE = Change Heater State, optional: 0 = off, 1 = standby temperature(s), 2 = active temperature(s).
+  * STDB_TIMEOUT = Time in seconds to wait between changing heater state to standby and setting heater target temperature to standby temperature when standby temperature is lower than tool temperature.
+    * Use for example 0.1 to change immediately to standby temperature.
+  * SHTDWN_TIMEOUT = Time in seconds to wait from docking tool to shutting off the heater, optional.
+    * Use for example 86400 to wait 24h if you want to disable shutdown timer.
+* `Tn` - T0, T1, T2, etc... A select command is created for each tool.
 
 ## Values accesible from Macro for each object
 - **Toollock**
