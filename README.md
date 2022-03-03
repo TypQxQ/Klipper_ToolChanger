@@ -43,6 +43,7 @@ parameter to specify another tool.
     - Or set to Time to standby to 0.1 for instant standby and Time to Powerdown to 604800 for a having it powered for a week.
     - Usefull when having sporadic toolchanges in a large print.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
+* Current Tool is saved and restored at powerdown.
 
 ## To do:
 * Save pressure avance per tool
@@ -54,7 +55,7 @@ parameter to specify another tool.
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
 * `T_1` - Unload and park all tools.
-* `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of selected or current tool if no `TOOL` supplied. Then save to be recovered at ToolChange.
+* `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of selected or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
   * `P` - Fan of this tool. Default current tool.
 * `TEMPERATURE_WAIT_WITH_TOLERANCE` - Waits for all temperatures, or a specified tool or heater's temperature.
@@ -75,31 +76,26 @@ This command can be used without any additional parameters. Without parameters i
 
 ## Values accesible from Macro for each object
 - **Toollock**
-  - `tool_current`
-  - `saved_fan_speed`
-  - `purge_on_toolchange`
-- **Tool**
-  - `name`
-  - `is_virtual`
-  - `physical_parent_id`
-  - `extruder`
-  - `fan`
-  - `lazy_home_when_parking`
-  - `meltzonelength`
-  - `zone`
-  - `park`
-  - `offset`
-  - `heater_state`
-  - `heater_active_temp`
-  - `heater_standby_temp`
-  - `placeholder_standby_temp`
-  - `idle_to_standby_time`
-  - `idle_to_powerdown_time`
+  - `tool_current` - -2: Unknown tool locked, -1: No tool locked, 0: and up are toolnames.
+  - `saved_fan_speed` - Speed saved at each fanspeedchange to be recovered at Toolchange.
+  - `purge_on_toolchange` - For use in macros to enable/disable purge/wipe code globaly.
+- **Tool** - The tool calling this macro is referenced as `myself` in macros. When running for example `T3` to pickup the physical tool, in `pickup_gcode:` of one can write `{myself.name}` which would return `3`.
+  - `name` - id. 0, 1, 2, etc.
+  - `is_virtual` - If this tool has another layer of toolchange possible.
+  - `physical_parent_id` - Parent physical tool that holds tool coordinates. Can be same as this.
+  - `extruder` - extruder name as configured.
+  - `fan` - fan name.
+  - `lazy_home_when_parking` - When set to 1, will home unhomed XY axes if needed and will not move any axis if already homed and parked. 2 Will also home Z if not homed.
+  - `meltzonelength` - Meltzonelength to unload/load filament at toolpak. See e3d documentation.
+  - `zone` - Fast aproach coordinates when parking
+  - `park` - Parking spot, slow aproach.
+  - `offset` - Tool offset.
+  - `heater_state` - 0 = off, 1 = standby temperature, 2 = active temperature. Placeholder.
+  - `heater_active_temp` - Temperature to set when in active mode.
+  - `heater_standby_temp` - Temperature to set when in standby mode.
+  - `idle_to_standby_time` - Time in seconds from being parked to setting temperature to standby the temperature above. Use 0.1 to change imediatley to standby temperature.
+  - `idle_to_powerdown_time` - Time in seconds from being parked to setting temperature to 0. Use something like 86400 to wait 24h if you want to disable. Requred on Physical tool.
 - **ToolGroup**
-  - `is_virtual`
-  - `physical_parent_id`
-  - `lazy_home_when_parking`
-- **ToolStandbyTempTimer**
-  - `tool`
-  - `temp_type`
-  - `duration`
+  - `is_virtual` - As above
+  - `physical_parent_id` - As above
+  - `lazy_home_when_parking` - As above
