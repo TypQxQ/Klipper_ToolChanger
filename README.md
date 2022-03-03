@@ -40,8 +40,8 @@ parameter to specify another tool.
   - Can be set in Active, Standby or Off mode.
   - Can have delayed Standby and Off. Configured and/or customized with N and O parameters at runtime.
     - Example. Set Standby temperature 30 sec after putting the tool in standby and in Off after 30 minutes of not being activated.
-    - Or set to Time to standby to 0.1 for instant standby and Time to Powerdown to 604800 for a having it powered for a week.
-    - Usefull when having sporadic toolchanges in a large print.
+    - Or set Time to standby to 0.1 for instant standby and Time to Powerdown to 604800 for a having it powered for a week.
+    - Usefull when having sporadic toolchanges in a large print or many toolchanges in a small print.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
 * Current Tool is saved and restored at powerdown.
 
