@@ -227,12 +227,12 @@ class ToolLock:
         shtdwn_timeout = gcmd.get_float('SHTDWN_TIMEOUT', None, minval=0)
 
         if tool_id < 0:
-            raise self.printer.command_error("cmd_SET_TOOL_TEMPERATURE: Tool " + str(tool_id) + " is not valid.")
+            self.gcode.respond_info("cmd_SET_TOOL_TEMPERATURE: Tool " + str(tool_id) + " is not valid.")
             return None
 
         if self.printer.lookup_object("tool " + str(tool_id)).get_status()["extruder"] is None:
-            #self.gcode.respond_info("cmd_SET_TOOL_TEMPERATURE: T%d tool has no extruder" % tool_id
-            raise self.printer.command_error("cmd_SET_TOOL_TEMPERATURE: T%d tool has no extruder" % tool_id)
+            self.gcode.respond_info("cmd_SET_TOOL_TEMPERATURE: T%d has no extruder! Nothing to do." % tool_id )
+            return None
 
         tool = self.printer.lookup_object("tool " + str(tool_id))
         set_heater_cmd = {}
