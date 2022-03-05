@@ -138,7 +138,7 @@ class ToolLock:
     # Can change fan scale for diffrent materials or tools from slicer. Maybe max and min too?
     #    
     def SetAndSaveFanSpeed(self, tool_id, fanspeed):
-        self.gcode.respond_info("ToolLock.SetAndSaveFanSpeed: Change fan speed for T%d to %d." % tool_id, fanspeed)
+        self.gcode.respond_info("ToolLock.SetAndSaveFanSpeed: Change fan speed for T%d to %d." % (tool_id, fanspeed))
         tool = self.printer.lookup_object("tool " + str(tool_id))
 
         if tool.fan is none:
@@ -147,8 +147,8 @@ class ToolLock:
             SaveFanSpeed(fanspeed)
             self.gcode.run_script_from_command(
                 "SET_FAN_SPEED FAN=%s SPEED=%d" % 
-                tool.fan, 
-                fanspeed)
+                (tool.fan, 
+                fanspeed))
 
     cmd_TEMPERATURE_WAIT_WITH_TOLERANCE_help = "Waits for all temperatures, or a specified (TOOL) tool or (HEATER) heater's temperature within (TOLERANCE) tolerance."
 #  Waits for all temperatures, or a specified tool or heater's temperature.

@@ -11,7 +11,7 @@ class Tool:
         self.name = None
         self.toolgroup = None               # defaults to 0. Check if tooltype is defined.
         self.is_virtual = None
-        self.physical_parent_id = None      # Parent tool is used as a Physical parent for all tools of this group. Only used if the tool i virtual. None gets remaped to -1. If parent points to self then -2.
+        self.physical_parent_id = None      # Parent tool is used as a Physical parent for all tools of this group. Only used if the tool i virtual. None gets remaped to -1.
         self.extruder = None                # Name of extruder connected to this tool. Defaults to None.
         self.fan = None                     # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
         self.meltzonelength = None          # Length of the meltzone for retracting and inserting filament on toolchange. 18mm for e3d Revo
@@ -74,11 +74,7 @@ class Tool:
             raise config.error(
                     "Section Tool '%s' cannot be virtual without a valid physical_parent. If Virtual and Physical then use itself as parent."
                     % (config.get_name()))
-
         
-        #if self.physical_parent_id == self.name:
-        #    self.physical_parent_id = -2;
-
         if self.physical_parent_id >= 0 and not self.physical_parent_id == self.name:
             pp = self.printer.lookup_object("tool " + str(self.physical_parent_id))
         else:
@@ -115,17 +111,21 @@ class Tool:
             self.offset = str(self.offset).split(',')
 
         ##### Standby settings #####
-        #################   Change to only change parent!!!!!
         if self.extruder is not None:
-            self.idle_to_standby_time = config.getfloat(
-                'idle_to_standby_time', pp_status['idle_to_standby_time'], minval = 0.1)
-            self.timer_idle_to_standby = ToolStandbyTempTimer(self.printer, self.name, 1)
+            if self.physical_parent_id < 0 or self.physical_parent_id == self.name:
+                self.idle_to_standby_time = config.getfloat(
+                    'idle_to_standby_time', tg_status['idle_to_standby_time'], minval = 0.1)
+                self.timer_idle_to_standby = ToolStandbyTempTimer(self.printer, self.name, 1)
 
-            self.idle_to_powerdown_time = config.getfloat(
-                'idle_to_powerdown_time', pp_status['idle_to_powerdown_time'], minval = 0.1)
-            self.timer_idle_to_powerdown_time = ToolStandbyTempTimer(self.printer, self.name, 0)
+                self.idle_to_powerdown_time = config.getfloat(
+                    'idle_to_powerdown_time', tg_status['idle_to_powerdown_time'], minval = 0.1)
+                self.timer_idle_to_powerdown = ToolStandbyTempTimer(self.printer, self.name, 0)
+            else:
+                self.idle_to_standby_time = pp.idle_to_standby_time
+                self.idle_to_powerdown_time = pp.idle_to_powerdown_time
+                self.timer_idle_to_standby = pp.get_timer_to_standby()
+                self.timer_idle_to_powerdown = pp.get_timer_to_powerdown()
 
-        
         ##### G-Code ToolChange #####
         self.pickup_gcode = config.get('pickup_gcode', None)
         self.dropoff_gcode = config.get('dropoff_gcode', None)
@@ -161,7 +161,7 @@ class Tool:
             raise self.printer.command_error("TOOL_PICKUP: Unknown tool already mounted Can't park it before selecting new tool.")
 
         if self.extruder is not None:               # If the new tool to be selected has an extruder.
-#            self.gcode.run_script_from_command("M568 P%d A2" % int(self.name))
+#            self.gcode.run_script_from_command("M568 P%d A2" % (int(self.name)))
             pass
 
         if current_tool_id >= 0:                    # If there is a current tool already selected and it's a dropable.
@@ -203,7 +203,7 @@ class Tool:
                 self.gcode.respond_info("cmd_SelectTool: T" + str(self.name) + "- Virtual - Picked up tool and now Loading tool.")
                 # To be implemented
 
-        self.gcode.run_script_from_command("M117 T%d Loaded" % int(self.name))
+        self.gcode.run_script_from_command("M117 T%d Loaded" % (int(self.name)))
         self.toollock.SaveCurrentTool(self.name)
 
     def Pickup(self):
@@ -216,7 +216,7 @@ class Tool:
         if self.extruder is not None:
             self.gcode.run_script_from_command(
                 "ACTIVATE_EXTRUDER extruder=%s" % 
-                self.extruder)
+                (self.extruder))
 
         # Run the gcode for pickup.
         try:
@@ -233,7 +233,7 @@ class Tool:
                 "SET_FAN_SPEED FAN=" + self.fan + " SPEED=" + str(self.toollock.get_saved_fan_speed()) )
 
         self.toollock.SaveCurrentTool(self.name)
-        self.gcode.run_script_from_command("M117 T%d picked up." % self.name)
+        self.gcode.run_script_from_command("M117 T%d picked up." % (self.name))
 
 
 
@@ -272,6 +272,10 @@ class Tool:
             self.gcode.respond_info("set_heater: T%d has no extruder! Nothing to do." % self.name )
             return None
 
+        #if self.physical_parent_id >= 0 and self.physical_parent_id != self.name:
+        #    physical_tool = self.physical_parent_id
+        #else:
+        #    physical_tool = self
 
         heater = self.printer.lookup_object(self.extruder).get_heater()
 
@@ -286,33 +290,40 @@ class Tool:
                 self.idle_to_standby_time = kwargs[i]
             elif i == "idle_to_powerdown_time":
                 self.idle_to_powerdown_time = kwargs[i]
-            elif i == "heater_state":
-                self.heater_state = kwargs[i]
 
         # Change Active mode:
         if "heater_state" in kwargs:
             chng_state = kwargs["heater_state"]
             if chng_state == 0:                                                                         # If Change to Shutdown
                 self.timer_idle_to_standby.set_timer(0)
-                self.timer_idle_to_powerdown_time.set_timer(0.1)
+                self.timer_idle_to_powerdown.set_timer(0.1)
             elif chng_state == 2:
                 self.timer_idle_to_standby.set_timer(0)
-                self.timer_idle_to_powerdown_time.set_timer(0)
+                self.timer_idle_to_powerdown.set_timer(0)
                 heater.set_temp(self.heater_active_temp)
             elif chng_state == 1:                                                                       # Else If Standby
                 curtime = self.printer.get_reactor().monotonic()
                 if int(self.heater_state) == 1 or int(self.heater_standby_temp) > int(heater.get_status(curtime)["temperature"]):
+                    self.gcode.respond_info("set_heater: T%d standbytemp:%d;heater_state:%d; current_temp:%d." % (self.name, int(self.heater_state), int(self.heater_standby_temp), int(heater.get_status(curtime)["temperature"])))
                     self.timer_idle_to_standby.set_timer(0.1)
-                    self.timer_idle_to_powerdown_time.set_timer(self.idle_to_powerdown_time)
+                    self.timer_idle_to_powerdown.set_timer(self.idle_to_powerdown_time)
                 else:                                                                                   # Else (Standby temperature is lower than the current temperature)
                     self.timer_idle_to_standby.set_timer(self.idle_to_standby_time)
-                    self.timer_idle_to_powerdown_time.set_timer(self.idle_to_powerdown_time)
+                    self.timer_idle_to_powerdown.set_timer(self.idle_to_powerdown_time)
+            self.heater_state = kwargs["heater_state"]
+            self.gcode.respond_info("set_heater: T%d heater_state now set to:%d." % (int(self.name), int(self.heater_state)))
 
     def get_pickup_gcode(self):
         return self.pickup_gcode
 
     def get_dropoff_gcode(self):
         return self.dropoff_gcode
+
+    def get_timer_to_standby(self):
+        return self.timer_idle_to_standby
+
+    def get_timer_to_powerdown(self):
+        return self.timer_idle_to_powerdown
 
 
     def get_status(self, eventtime= None):
@@ -353,14 +364,16 @@ class ToolStandbyTempTimer:
             self._standby_tool_temp_timer_event, self.reactor.NEVER)
     def _standby_tool_temp_timer_event(self, eventtime):
         self.inside_timer = True
+        self.gcode.respond_info("_standby_tool_temp_timer_event: Running for T" + str(self.tool_id) + ". temp_type:" + str(self.temp_type))
         try:
-            tool = self.printer.lookup_object(self.tool_id)
+            tool = self.printer.lookup_object("tool " + str(self.tool_id))
             temperature = 0
             if self.temp_type == 1:
                 temperature = tool.get_status()["heater_standby_temp"]
             heater = self.printer.lookup_object(tool.extruder).get_heater()
             heater.set_temp(temperature)
         except Exception:
+            self.gcode.respond_info("Failed to set Standby temp for tool T" + str(self.tool_id) + ".")
             logging.exception("Failed to set Standby temp for tool T" + str(self.tool_id) + ".")
         nextwake = self.reactor.NEVER
         if self.repeat:
@@ -368,6 +381,7 @@ class ToolStandbyTempTimer:
         self.inside_timer = self.repeat = False
         return nextwake
     def set_timer(self, duration):
+        self.gcode.respond_info("ToolStandbyTempTimer.set_timer: T" + str(self.tool_id) + "; temp_type:" + str(self.temp_type) + "; duration:" + str(duration) + ".")
         self.duration = float(duration)
         if self.inside_timer:
             self.repeat = (self.duration != 0.)
