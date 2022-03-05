@@ -25,7 +25,7 @@ class ToolGroup:
         self.pickup_gcode = config.get('pickup_gcode', '')
         self.dropoff_gcode = config.get('dropoff_gcode', '')
         self.lazy_home_when_parking = config.get('lazy_home_when_parking', None)                      # 0 = none, 1= Only load filament, 2= Wipe in front of carriage, 3= Pebble wiper, 4= First Silicone, then pebble. Defaults to 0.
-
+        self.meltzonelength = config.get('meltzonelength', None)
 
     def get_pickup_gcode(self):
         return self.pickup_gcode
@@ -37,7 +37,8 @@ class ToolGroup:
         status = {
             "is_virtual": self.is_virtual,
             "physical_parent_id": self.physical_parent_id,
-            "lazy_home_when_parking": self.lazy_home_when_parking
+            "lazy_home_when_parking": self.lazy_home_when_parking,
+            "meltzonelength": self.meltzonelength
         }
         return status
 

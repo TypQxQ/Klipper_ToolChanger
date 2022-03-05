@@ -4,39 +4,44 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging
+from types import NoneType
 
 class Tool:
     def __init__(self, config = None):
-        # If called without config then createa a dummy object.
+        self.name = None
+        self.toolgroup = None               # defaults to 0. Check if tooltype is defined.
+        self.is_virtual = None
+        self.physical_parent_id = None      # Parent tool is used as a Physical parent for all tools of this group. Only used if the tool i virtual. None gets remaped to -1. If parent points to self then -2.
+        self.extruder = None                # Name of extruder connected to this tool. Defaults to None.
+        self.fan = None                     # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+        self.meltzonelength = None          # Length of the meltzone for retracting and inserting filament on toolchange. 18mm for e3d Revo
+        self.lazy_home_when_parking = None  # (default: 0 - disabled) - When set to 1, will home unhomed XY axes if needed and will not move any axis if already homed and parked. 2 Will also home Z if not homed.
+                                            # Wipe. -1 = none, 1= Only load filament, 2= Wipe in front of carriage, 3= Pebble wiper, 4= First Silicone, then pebble. Defaults to None.
+        self.zone = None                    # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+        self.park = None                    # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+        self.offset = None                  # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+
+        self.pickup_gcode = None            # The plain gcode string is to load for virtual tool having this tool as parent.
+        self.dropoff_gcode = None           # The plain gcode string is to load for virtual tool having this tool as parent.
+
+        self.heater_state = 0               # 0 = off, 1 = standby temperature, 2 = active temperature. Placeholder. Requred on Physical tool.
+        self.heater_active_temp = 0         # Temperature to set when in active mode. Placeholder. Requred on Physical and virtual tool if any has extruder.
+        self.heater_standby_temp = 0        # Temperature to set when in standby mode.  Placeholder. Requred on Physical and virtual tool if any has extruder.
+        self.idle_to_standby_time = 30      # Time in seconds from being parked to setting temperature to standby the temperature above. Use 0.1 to change imediatley to standby temperature. Requred on Physical tool
+        self.idle_to_powerdown_time = 600   # Time in seconds from being parked to setting temperature to 0. Use something like 86400 to wait 24h if you want to disable. Requred on Physical tool.
+
+        # If called without config then just return a dummy object.
         if config is None:
-            self.name = None
-            self.is_virtual = None
-            self.physical_parent_id = None
-            self.extruder = None
-            self.fan = None
-            self.meltzonelength = 0
-            self.lazy_home_when_parking = None
-            self.zone = None
-            self.park = None
-            self.offset = None
-            self.pickup_gcode = None
-            self.dropoff_gcode = None
-            self.heater_state = None
-            self.heater_active_temp = None
-            self.heater_standby_temp = None
-            self.placeholder_standby_temp = None
-            self.idle_to_standby_time = None
-            self.idle_to_powerdown_time = None
             return None
 
-        # And from here we create the real object.
+        # Load used objects.
         self.printer = config.get_printer()
         self.gcode = config.get_printer().lookup_object('gcode')
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
         self.toollock = self.printer.lookup_object('toollock')
 
+        ##### Name #####
         self.name = config.get_name().split()[-1]
-
         if not unicode(self.name, 'utf-8').isnumeric():
             raise config.error(
                     "Name of section '%s' contains illegal characters. Use only integer tool number."
@@ -44,34 +49,35 @@ class Tool:
         else:
             self.name = int(self.name)
 
-        # ToolType, defaults to 0. Check if tooltype is defined.
+        ##### ToolGroup #####
         self.toolgroup = 'toolgroup ' + str(config.getint('tool_group'))
         if config.has_section(self.toolgroup):
             self.toolgroup = self.printer.lookup_object(self.toolgroup)
         else:
             raise config.error(
-                    "Tooltype of '%s' is not defined. It must be configured before the tool."
+                    "ToolGroup of T'%s' is not defined. It must be configured before the tool."
                     % (config.get_name()))
+        tg_status = self.toolgroup.get_status()
 
+        ##### Is Virtual #####
         self.is_virtual = config.getboolean('is_virtual', 
-                                            self.toolgroup.get_status()["is_virtual"])
+                                            tg_status["is_virtual"])
 
-        # Parent tool is used as a Physical parent for all tools of this group. Only used if the tool i virtual.
+        ##### Physical Parent #####
         self.physical_parent_id = config.getint('physical_parent', 
-                                                self.toolgroup.get_status()["physical_parent_id"])
-
+                                                tg_status["physical_parent_id"])
         if self.physical_parent_id is None:
             self.physical_parent_id = -1
 
         # Used as sanity check for tools that are virtual with same physical as themselves.
         if self.is_virtual and self.physical_parent_id == -1:
             raise config.error(
-                    "Section Tool '%s' cannot be virtual without a valid physical_parent."
+                    "Section Tool '%s' cannot be virtual without a valid physical_parent. If Virtual and Physical then use itself as parent."
                     % (config.get_name()))
 
         
         if int(self.physical_parent_id) == int(self.name):
-            self.physical_parent_id = -1;
+            self.physical_parent_id = -2;
 
         if self.physical_parent_id >= 0:
             pp = self.printer.lookup_object("tool " + str(self.physical_parent_id))
@@ -80,46 +86,51 @@ class Tool:
 
         pp_status = pp.get_status()
 
-        self.extruder = config.get('extruder', pp_status['extruder'])      # Name of extruder connected to this tool. Defaults to None.
-        self.fan = config.get('fan', pp_status['fan'])                     # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
-        self.meltzonelength = config.get('meltzonelength', 
-                                         pp_status['meltzonelength'])      # Length of the meltzone for retracting and inserting filament on toolchange. 18mm for e3d Revo
 
+        ##### Extruder #####
+        self.extruder = config.get('extruder', pp_status['extruder'])      
 
-        self.lazy_home_when_parking = config.get('lazy_home_when_parking', pp_status['lazy_home_when_parking'])   # -1 = none, 1= Only load filament, 2= Wipe in front of carriage, 3= Pebble wiper, 4= First Silicone, then pebble. Defaults to None.
+        ##### Fan #####
+        self.fan = config.get('fan', pp_status['fan'])                     
+
+        ##### Meltzone Length #####
+        self.meltzonelength = config.get('meltzonelength', pp_status['meltzonelength'])      
+        if self.meltzonelength is None:
+            self.meltzonelength = tg_status["meltzonelength"]
+
+        ##### Lazy Home when parking #####
+        self.lazy_home_when_parking = config.get('lazy_home_when_parking', pp_status['lazy_home_when_parking'])   
         if self.lazy_home_when_parking is None:
-            self.lazy_home_when_parking = self.toolgroup.get_status()["lazy_home_when_parking"]      # Toolgroup initializes as -1 while all other as None.
+            self.lazy_home_when_parking = tg_status["lazy_home_when_parking"]
 
-        self.zone = config.get('zone', pp_status['zone'])                  # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
-        self.park = config.get('park', pp_status['park'])                  # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
-        self.offset = config.get('offset', pp_status['offset'])            # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+        ##### Coordinates #####
+        self.zone = config.get('zone', pp_status['zone'])
+        if not isinstance(self.zone, list):
+            str(self.zone).split(',')
+        self.park = config.get('park', pp_status['park'])                  
+        if not isinstance(self.park, list):
+            str(self.park).split(',')
+        self.offset = config.get('offset', pp_status['offset'])
+        if not isinstance(self.offset, list):
+            str(self.offset).split(',')
 
-        if self.zone is None or self.park is None or self.offset is None:
-            raise config.error(
-                    "Section Tool '%s' misses requred parameter."
-                    % (config.get_name()))
-
-        self.heater_state = 0                   # 0 = off, 1 = standby temperature, 2 = active temperature. Placeholder. Requred on Physical tool.
-        self.heater_active_temp = 0             # Temperature to set when in active mode. Placeholder. Requred on Physical and virtual tool if any has extruder.
-        self.heater_standby_temp = 0            # Temperature to set when in standby mode.  Placeholder. Requred on Physical and virtual tool if any has extruder.
-        self.placeholder_standby_temp = 0       # Required placeholder if this tool has virtual tools. Holds last used standby temp of physical heater.
-
+        ##### Standby settings #####
         self.idle_to_standby_time = config.get(
-            'idle_to_standby_time', 30)                                     # Time in seconds from being parked to setting temperature to standby the temperature above. Use 0.1 to change imediatley to standby temperature. Requred on Physical tool
-        self.idle_to_powerdown_time = config.get(
-            'idle_to_powerdown_time', 600)                                  # Time in seconds from being parked to setting temperature to 0. Use something like 86400 to wait 24h if you want to disable. Requred on Physical tool.
-        
+            'idle_to_standby_time', pp_status['idle_to_standby_time'])
+        self.timer_idle_to_standby = ToolStandbyTempTimer(self.printer, self.name, 1)
 
-        # The plain gcode string is to load for virtual tool having this tool as parent.
+        self.idle_to_powerdown_time = config.get(
+            'idle_to_powerdown_time', pp_status['idle_to_powerdown_time'])
+        self.timer_idle_to_powerdown_time = ToolStandbyTempTimer(self.printer, self.name, 0)
+
+        
+        ##### G-Code ToolChange #####
         self.pickup_gcode = config.get('pickup_gcode', None)
         self.dropoff_gcode = config.get('dropoff_gcode', None)
 
-
-        # Get the pickup_gcode parameter from the parent and if none then from the toolgroup. If none is defined in parent and toolgroup then it returns empty.
         temp_pickup_gcode = pp.get_pickup_gcode()
         if temp_pickup_gcode is None:
             temp_pickup_gcode =  self.toolgroup.get_pickup_gcode()
-        # Get the pickup_gcode parameter the tool and use the one from the toolgroup as default.
         self.pickup_gcode_template = gcode_macro.load_template(config, 'pickup_gcode', temp_pickup_gcode)
 
         temp_dropoff_gcode = pp.get_dropoff_gcode()
@@ -127,10 +138,8 @@ class Tool:
             temp_dropoff_gcode = self.toolgroup.get_dropoff_gcode()
         self.dropoff_gcode_template = gcode_macro.load_template(config, 'dropoff_gcode', temp_dropoff_gcode)
 
-        self.timer_idle_to_standby = ToolStandbyTempTimer(self.printer, self.name, 1)
-        self.timer_idle_to_powerdown_time = ToolStandbyTempTimer(self.printer, self.name, 0)
 
-        # Register commands
+        ##### Register Tool select command #####
         self.gcode.register_command("T" + str(self.name), self.cmd_SelectTool, desc=self.cmd_SelectTool_help)
 
 
@@ -168,15 +177,11 @@ class Tool:
                 current_tool.Dropoff()
                 current_tool_id = -1
 
-        # Now we asume tool has been deselected if needed be.
+        # Now we asume tool has been dropped if needed be.
 
         if not self.is_virtual:
             self.gcode.respond_info("cmd_SelectTool: T" + str(self.name) + "- Not Virtual - Pickup")
             self.Pickup()
-            #    SUB_TOOL_PICKUP_START {rawparams}                                    # Start Pickup tool
-            #    SUB_TOOL_PICKUP_WIPE {rawparams}                                     # Wipe tool
-            #    SUB_TOOL_PICKUP_END {rawparams}                                      # End Pickup tool code
-            #    SUB_TOOL_PICKUP_DEPRESURIZE_HOTEND                                   # Depresurize tool
         else:
             if current_tool_id >= 0:                 # If still has a selected tool: (This tool is a virtual tool with same physical tool as the last)
                 current_tool = self.printer.lookup_object('tool ' + str(current_tool_id))
@@ -188,23 +193,13 @@ class Tool:
                     return ""
                 else:
                     self.gcode.respond_info("cmd_SelectTool: T" + str(self.name) + "- Virtual - Not Same physical tool")
-                    # Shouldn't reach this?
+                    # Shouldn't reach this because it is dropped in previous.
                     #self.Pickup()
-                    #          SUB_TOOL_PICKUP_START T={tool_id}                                        # Pickup the physical tool for the virtual ERCF tool.
-                    #                                                                             # Run ERCF code
-                    #          RESPOND MSG="ERCF not implemented yet. Changing to ERCF with diffrent physical tool. From {current_tool_id} to {tool_id} with physical tool {tool.ercf_physical_tool|string}."
-                    #          SUB_TOOL_PICKUP_WIPE {rawparams}                                   # Wipe tool
-                    #          SUB_TOOL_PICKUP_END {rawparams}                                    # End Pickup tool code
-                    #          SUB_TOOL_PICKUP_DEPRESURIZE_HOTEND                                 # Depresurize tool
             else:
-                self.gcode.respond_info("cmd_SelectTool: T" + str(self.name) + "- Virtual - Tool is droped")
+                self.gcode.respond_info("cmd_SelectTool: T" + str(self.name) + "- Virtual - Tool is dropped")
                 self.Pickup()
-                      #        SUB_TOOL_PICKUP_START T={tool_id}                                        # Pickup the physical tool for the virtual ERCF tool.
-                      #                                                                           # Run ERCF code
-                      #        RESPOND MSG="ERCF not implemented yet. Changing to ERCF with diffrent physical tool. From {current_tool_id} to {tool_id} with physical tool {tool.ercf_physical_tool|string}."
-                      #        SUB_TOOL_PICKUP_WIPE {rawparams}                                   # Wipe tool
-                      #        SUB_TOOL_PICKUP_END {rawparams}                                    # End Pickup tool code
-                      #        SUB_TOOL_PICKUP_DEPRESURIZE_HOTEND                                 # Depresurize tool
+                self.gcode.respond_info("cmd_SelectTool: T" + str(self.name) + "- Virtual - Picked up tool and now Loading tool.")
+                # To be implemented
 
         self.gcode.run_script_from_command("M117 T%d Loaded" % int(self.name))
         self.toollock.SaveCurrentTool(self.name)
@@ -337,13 +332,12 @@ class Tool:
             "fan": self.fan,
             "lazy_home_when_parking": self.lazy_home_when_parking,
             "meltzonelength": self.meltzonelength,
-            "zone": str(self.zone).split(','),
-            "park": str(self.park).split(','),
-            "offset": str(self.offset).split(','),
+            "zone": self.zone,
+            "park": self.park,
+            "offset": self.offset,
             "heater_state": self.heater_state,
             "heater_active_temp": self.heater_active_temp,
             "heater_standby_temp": self.heater_standby_temp,
-            "placeholder_standby_temp": self.placeholder_standby_temp,
             "idle_to_standby_time": self.idle_to_standby_time,
             "idle_to_powerdown_time": self.idle_to_powerdown_time
         }
