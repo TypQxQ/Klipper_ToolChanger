@@ -43,7 +43,7 @@ parameter to specify another tool.
     - Or set Time to standby to 0.1 for instant standby and Time to Powerdown to 604800 for a having it powered for a week.
     - Usefull when having sporadic toolchanges in a large print or many toolchanges in a small print.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
-* Current Tool is saved and restored at powerdown.
+* Current Tool is saved and restored at powerdown. Default but optional.
 
 ## To do:
 * Save pressure avance per tool
