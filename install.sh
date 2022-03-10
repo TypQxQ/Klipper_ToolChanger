@@ -36,7 +36,7 @@ check_preconditions()
 link_extension()
 {
     echo "Linking ${EXTENSION_NAME} to Klippy extras..."
-    ln -sf "${SRCDIR}/*.py" "${KLIPPER_PATH}/klippy/extras/}"
+    ln -sf ${SRCDIR}/*.py ${KLIPPER_PATH}/klippy/extras/
 }
 
 # Step 3: restarting Klipper

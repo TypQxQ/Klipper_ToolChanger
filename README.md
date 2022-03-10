@@ -49,7 +49,7 @@ parameter to specify another tool.
 ### Install with Moonraker Autoupdate Support
 This plugin assumes that you installed Klipper into your home directory (usually `/home/pi`). 
 
-1) Clone this repo into the same location where Klipper is installed:
+1) Clone this repo into your home directory where Klipper is installed:
 ```
 cd ~
 git clone https://github.com/TypQxQ/Klipper_ToolChanger.git
