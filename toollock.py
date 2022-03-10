@@ -14,7 +14,7 @@ class ToolLock:
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
 
         self.saved_fan_speed = 0          # Saved partcooling fan speed when deselecting a tool with a fan.
-        self.tool_current = -2            # -2 Unknown tool locked, -1 No tool locked, 0 and up are tools.
+        self.tool_current = "-2"          # -2 Unknown tool locked, -1 No tool locked, 0 and up are tools.
         self.init_printer_to_last_tool = config.getboolean(
             'init_printer_to_last_tool', True)
         self.purge_on_toolchange = config.getboolean(
@@ -45,7 +45,7 @@ class ToolLock:
     def ToolLock(self, ignore_locked = False):
         self.gcode.respond_info("TOOL_LOCK running. ")
         if not ignore_locked and int(self.tool_current) != -1:
-            self.gcode.respond_info("TOOL_LOCK is already locked with tool " + str(self.tool_current) + ".")
+            self.gcode.respond_info("TOOL_LOCK is already locked with tool " + self.tool_current + ".")
         else:
             self.tool_lock_gcode_template.run_gcode_from_command()
             self.SaveCurrentTool(-2)
@@ -56,8 +56,8 @@ class ToolLock:
     cmd_T_1_help = "Deselect all tools"
     def cmd_T_1(self, gcmd = None):
         self.gcode.respond_info("T_1 running. ")# + gcmd.get_raw_command_parameters())
-        if self.tool_current != -1:
-            self.printer.lookup_object('tool ' + str(self.tool_current)).Dropoff()
+        if self.tool_current != "-1":
+            self.printer.lookup_object('tool ' + self.tool_current).Dropoff()
 
     cmd_TOOL_UNLOCK_help = "Save the current tool to file to load at printer startup."
     def cmd_TOOL_UNLOCK(self, gcmd = None):
@@ -106,11 +106,11 @@ class ToolLock:
         try:
             self.tool_current = save_variables.allVariables["tool_current"]
         except:
-            self.tool_current = -1
+            self.tool_current = "-1"
             save_variables.cmd_SAVE_VARIABLE(self.gcode.create_gcode_command(
                 "SAVE_VARIABLE", "SAVE_VARIABLE", {"VARIABLE": "tool_current", 'VALUE': self.tool_current }))
 
-        if self.tool_current == -1:
+        if self.tool_current == "-1":
             self.cmd_TOOL_UNLOCK()
             self.gcode.run_script_from_command("M117 ToolLock initialized unlocked")
 
@@ -118,13 +118,13 @@ class ToolLock:
             t = self.tool_current
             self.ToolLock(True)
             self.tool_current = t
-            self.gcode.run_script_from_command("M117 ToolLock initialized with T%d." % self.tool_current) 
+            self.gcode.run_script_from_command("M117 ToolLock initialized with T%s." % self.tool_current) 
 
 
     cmd_SET_AND_SAVE_FAN_SPEED_help = "Save the fan speed to be recovered at ToolChange."
     def cmd_SET_AND_SAVE_FAN_SPEED(self, gcmd):
         fanspeed = gcmd.get_float('S', 1, minval=0, maxval=255)
-        tool_id = gcmd.get_int('P', self.tool_current, minval=0)
+        tool_id = gcmd.get_int('P', int(self.tool_current), minval=0)
 
         # If value is >1 asume it is given in 0-255 and convert to percentage.
         if fanspeed > 1:
@@ -172,7 +172,7 @@ class ToolLock:
         elif tool_id is None and heater_id is None:
             tool_id = self.tool_current
             if int(self.tool_current) >= 0:
-                heater_name = self.printer.lookup_object("tool " + str(self.tool_current)).get_status()["extruder"]
+                heater_name = self.printer.lookup_object("tool " + self.tool_current).get_status()["extruder"]
             #wait for bed
             self._Temperature_wait_with_tolerance(curtime, "heater_bed", tolerance)
 
