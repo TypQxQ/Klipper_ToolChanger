@@ -67,7 +67,7 @@ is_system_service: False
 
 3) Run the `install.sh` script
 ```
-./install.sh
+~/Klipper_ToolChanger/install.sh
 ```
 
 Klipper_ToolChanger will show up in the update the next time you restart moonraker, or you can restart mooraker right away with: `sudo systemctl restart moonraker`.
