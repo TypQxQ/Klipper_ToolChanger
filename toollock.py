@@ -56,6 +56,8 @@ class ToolLock:
     cmd_T_1_help = "Deselect all tools"
     def cmd_T_1(self, gcmd = None):
         self.gcode.respond_info("T_1 running. ")# + gcmd.get_raw_command_parameters())
+        if self.tool_current == "-2":
+            raise self.printer.command_error("cmd_T_1: Unknown tool already mounted Can't park unknown tool.")
         if self.tool_current != "-1":
             self.printer.lookup_object('tool ' + self.tool_current).Dropoff()
 
