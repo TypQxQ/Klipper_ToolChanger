@@ -112,7 +112,7 @@ class ToolLock:
             save_variables.cmd_SAVE_VARIABLE(self.gcode.create_gcode_command(
                 "SAVE_VARIABLE", "SAVE_VARIABLE", {"VARIABLE": "tool_current", 'VALUE': self.tool_current }))
 
-        if self.tool_current == "-1":
+        if str(self.tool_current) == "-1":
             self.cmd_TOOL_UNLOCK()
             self.gcode.run_script_from_command("M117 ToolLock initialized unlocked")
 
