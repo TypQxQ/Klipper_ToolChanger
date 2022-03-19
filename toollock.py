@@ -203,7 +203,7 @@ class ToolLock:
             self.gcode.run_script_from_command(
                 "TEMPERATURE_WAIT SENSOR=" + heater_name + 
                 " MINIMUM=" + str(target_temp - tolerance) + 
-                "MAXIMUM=" + str(target_temp + tolerance) )
+                " MAXIMUM=" + str(target_temp + tolerance) )
             self.gcode.respond_info("Wait for heater " + heater_name + " complete.")
         #else:
         #    self.gcode.respond_info("Not waiting for heater " + heater_name + " to reach " + str(target_temp) + " with a tolerance of " + str(tolerance) + ".")
