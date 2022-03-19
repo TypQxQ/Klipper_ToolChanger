@@ -48,7 +48,7 @@ class ToolLock:
             self.gcode.respond_info("TOOL_LOCK is already locked with tool " + self.tool_current + ".")
         else:
             self.tool_lock_gcode_template.run_gcode_from_command()
-            self.SaveCurrentTool(-2)
+            self.SaveCurrentTool("-2")
             self.gcode.respond_info("Locked")
 
 
@@ -59,7 +59,7 @@ class ToolLock:
         if self.tool_current == "-2":
             raise self.printer.command_error("cmd_T_1: Unknown tool already mounted Can't park unknown tool.")
         if self.tool_current != "-1":
-            self.printer.lookup_object('tool ' + self.tool_current).Dropoff()
+            self.printer.lookup_object('tool ' + str(self.tool_current)).Dropoff()
 
     cmd_TOOL_UNLOCK_help = "Save the current tool to file to load at printer startup."
     def cmd_TOOL_UNLOCK(self, gcmd = None):
@@ -119,7 +119,7 @@ class ToolLock:
         else:
             t = self.tool_current
             self.ToolLock(True)
-            self.tool_current = t
+            self.SaveCurrentTool(str(t))
             self.gcode.run_script_from_command("M117 ToolLock initialized with T%s." % self.tool_current) 
 
 
@@ -128,9 +128,16 @@ class ToolLock:
         fanspeed = gcmd.get_float('S', 1, minval=0, maxval=255)
         tool_id = gcmd.get_int('P', int(self.tool_current), minval=0)
 
+        # The minval above doesn't seem to work.
+        if tool_id < 0:
+            self.gcode.respond_info("cmd_SET_AND_SAVE_FAN_SPEED: Invalid tool")
+            return None
+
+        self.gcode.respond_info("ToolLock.cmd_SET_AND_SAVE_FAN_SPEED: Change fan speed for T%d to %f." % (tool_id, fanspeed))
+
         # If value is >1 asume it is given in 0-255 and convert to percentage.
         if fanspeed > 1:
-            fanspeed=fanspeed / 255.0
+            fanspeed=float(fanspeed / 255.0)
 
         self.SetAndSaveFanSpeed(tool_id, fanspeed)
 
@@ -140,15 +147,14 @@ class ToolLock:
     # Can change fan scale for diffrent materials or tools from slicer. Maybe max and min too?
     #    
     def SetAndSaveFanSpeed(self, tool_id, fanspeed):
-        self.gcode.respond_info("ToolLock.SetAndSaveFanSpeed: Change fan speed for T%d to %d." % (tool_id, fanspeed))
         tool = self.printer.lookup_object("tool " + str(tool_id))
 
-        if tool.fan is none:
+        if tool.fan is None:
             self.gcode.respond_info("ToolLock.SetAndSaveFanSpeed: Tool %d has no fan." % tool_id)
         else:
-            SaveFanSpeed(fanspeed)
+            self.SaveFanSpeed(fanspeed)
             self.gcode.run_script_from_command(
-                "SET_FAN_SPEED FAN=%s SPEED=%d" % 
+                "SET_FAN_SPEED FAN=%s SPEED=%f" % 
                 (tool.fan, 
                 fanspeed))
 
