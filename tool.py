@@ -303,12 +303,12 @@ class Tool:
                 heater.set_temp(self.heater_active_temp)
             elif chng_state == 1:                                                                       # Else If Standby
                 curtime = self.printer.get_reactor().monotonic()
-                if int(self.heater_state) == 1 or int(self.heater_standby_temp) > int(heater.get_status(curtime)["temperature"]):
-                    self.gcode.respond_info("set_heater: T%d standbytemp:%d;heater_state:%d; current_temp:%d." % (self.name, int(self.heater_state), int(self.heater_standby_temp), int(heater.get_status(curtime)["temperature"])))
-                    self.timer_idle_to_standby.set_timer(0.1)
+                if int(self.heater_state) == 2 and int(self.heater_standby_temp) < int(heater.get_status(curtime)["temperature"]):
+                    self.timer_idle_to_standby.set_timer(self.idle_to_standby_time)
                     self.timer_idle_to_powerdown.set_timer(self.idle_to_powerdown_time)
                 else:                                                                                   # Else (Standby temperature is lower than the current temperature)
-                    self.timer_idle_to_standby.set_timer(self.idle_to_standby_time)
+                    self.gcode.respond_info("set_heater: T%d standbytemp:%d;heater_state:%d; current_temp:%d." % (self.name, int(self.heater_state), int(self.heater_standby_temp), int(heater.get_status(curtime)["temperature"])))
+                    self.timer_idle_to_standby.set_timer(0.1)
                     self.timer_idle_to_powerdown.set_timer(self.idle_to_powerdown_time)
             self.heater_state = kwargs["heater_state"]
             self.gcode.respond_info("set_heater: T%d heater_state now set to:%d." % (int(self.name), int(self.heater_state)))
