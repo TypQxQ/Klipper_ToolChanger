@@ -130,7 +130,7 @@ class ToolLock:
 
         # The minval above doesn't seem to work.
         if tool_id < 0:
-            self.gcode.respond_info("cmd_SET_AND_SAVE_FAN_SPEED: Invalid tool")
+            self.gcode.respond_info("cmd_SET_AND_SAVE_FAN_SPEED: Invalid tool:"+str(tool_id))
             return None
 
         self.gcode.respond_info("ToolLock.cmd_SET_AND_SAVE_FAN_SPEED: Change fan speed for T%d to %f." % (tool_id, fanspeed))
