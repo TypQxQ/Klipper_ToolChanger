@@ -17,9 +17,9 @@ class Tool:
         self.meltzonelength = None          # Length of the meltzone for retracting and inserting filament on toolchange. 18mm for e3d Revo
         self.lazy_home_when_parking = None  # (default: 0 - disabled) - When set to 1, will home unhomed XY axes if needed and will not move any axis if already homed and parked. 2 Will also home Z if not homed.
                                             # Wipe. -1 = none, 1= Only load filament, 2= Wipe in front of carriage, 3= Pebble wiper, 4= First Silicone, then pebble. Defaults to None.
-        self.zone = None                    # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
-        self.park = None                    # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
-        self.offset = None                  # Name of general fan configuration connected to this tool as a part fan. Defaults to "none".
+        self.zone = None                    # Position of the parking zone in the format X, Y  
+        self.park = None                    # Position to move to when fully parking the tool in the dock in the format X, Y
+        self.offset = None                  # Offset of the nozzle in the format X, Y, Z
 
         self.pickup_gcode = None            # The plain gcode string is to load for virtual tool having this tool as parent.
         self.dropoff_gcode = None           # The plain gcode string is to load for virtual tool having this tool as parent.
@@ -224,6 +224,7 @@ class Tool:
         try:
             context = self.pickup_gcode_template.create_template_context()
             context['myself'] = self.get_status()
+            context['toollock'] = self.toollock.get_status()
 #            self.gcode.respond_info(self.pickup_gcode_template.render(context))
             self.pickup_gcode_template.run_gcode_from_command(context)
         except Exception:
@@ -256,6 +257,7 @@ class Tool:
         try:
             context = self.dropoff_gcode_template.create_template_context()
             context['myself'] = self.get_status()
+            context['toollock'] = self.toollock.get_status()
             self.dropoff_gcode_template.run_gcode_from_command(context)
         except Exception:
             logging.exception("Dropoff gcode: Script running error")
@@ -268,6 +270,23 @@ class Tool:
 
     def UnloadVirtual(self):
         self.gcode.respond_info("UnloadVirtual: Virtual tools not implemented yet. T%d." % self.name )
+
+    def set_offset(self, **kwargs):
+        for i in kwargs:
+            if i == "x_pos":
+                self.offset[0] = float(kwargs[i])
+            elif i == "x_adjust":
+                self.offset[0] = float(self.offset[0]) + float(kwargs[i])
+            elif i == "y_pos":
+                self.offset[1] = float(kwargs[i])
+            elif i == "y_adjust":
+                self.offset[1] = float(self.offset[1]) + float(kwargs[i])
+            elif i == "z_pos":
+                self.offset[2] = float(kwargs[i])
+            elif i == "z_adjust":
+                self.offset[2] = float(self.offset[2]) + float(kwargs[i])
+
+        self.gcode.respond_info("set_offset: T%d offset now set to:%d, %d, %d." % (int(self.name), float(self.offset[0]), float(self.offset[1]), float(self.offset[2])))
 
     def set_heater(self, **kwargs):
         if self.extruder is None:
@@ -326,7 +345,6 @@ class Tool:
 
     def get_timer_to_powerdown(self):
         return self.timer_idle_to_powerdown
-
 
     def get_status(self, eventtime= None):
         status = {
