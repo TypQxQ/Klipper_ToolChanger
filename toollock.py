@@ -13,6 +13,7 @@ class ToolLock:
         self.gcode = config.get_printer().lookup_object('gcode')
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
 
+        self.global_offset = [0, 0, 0]    # Global offset to apply to all tools
         self.saved_fan_speed = 0          # Saved partcooling fan speed when deselecting a tool with a fan.
         self.tool_current = "-2"          # -2 Unknown tool locked, -1 No tool locked, 0 and up are tools.
         self.init_printer_to_last_tool = config.getboolean(
@@ -32,9 +33,10 @@ class ToolLock:
         self.gcode.register_command("SET_AND_SAVE_FAN_SPEED", self.cmd_SET_AND_SAVE_FAN_SPEED, desc=self.cmd_SET_AND_SAVE_FAN_SPEED_help)
         self.gcode.register_command("TEMPERATURE_WAIT_WITH_TOLERANCE", self.cmd_TEMPERATURE_WAIT_WITH_TOLERANCE, desc=self.cmd_TEMPERATURE_WAIT_WITH_TOLERANCE_help)
         self.gcode.register_command("SET_TOOL_TEMPERATURE", self.cmd_SET_TOOL_TEMPERATURE, desc=self.cmd_SET_TOOL_TEMPERATURE_help)
+        self.gcode.register_command("SET_GLOBAL_OFFSET", self.cmd_SET_GLOBAL_OFFSET, desc=self.cmd_SET_GLOBAL_OFFSET_help)
+        self.gcode.register_command("SET_TOOL_OFFSET", self.cmd_SET_TOOL_OFFSET, desc=self.cmd_SET_TOOL_OFFSET_help)   
 
-        self.gcode.register_mux_command("TEST_PY", "EXTRUDER", None,
-                                    self.cmd_test_py)
+        self.gcode.register_mux_command("TEST_PY", "EXTRUDER", None, self.cmd_test_py)
         
         self.printer.register_event_handler("klippy:ready", self.Initialize_Tool_Lock)
 
@@ -51,8 +53,6 @@ class ToolLock:
             self.SaveCurrentTool("-2")
             self.gcode.respond_info("Locked")
 
-
-
     cmd_T_1_help = "Deselect all tools"
     def cmd_T_1(self, gcmd = None):
         self.gcode.respond_info("T_1 running. ")# + gcmd.get_raw_command_parameters())
@@ -61,7 +61,7 @@ class ToolLock:
         if self.tool_current != "-1":
             self.printer.lookup_object('tool ' + str(self.tool_current)).Dropoff()
 
-    cmd_TOOL_UNLOCK_help = "Save the current tool to file to load at printer startup."
+    cmd_TOOL_UNLOCK_help = "Unlock the ToolLock."
     def cmd_TOOL_UNLOCK(self, gcmd = None):
         self.gcode.respond_info("TOOL_UNLOCK running. ")
         self.tool_unlock_gcode_template.run_gcode_from_command()
@@ -258,6 +258,59 @@ class ToolLock:
         if len(set_heater_cmd) > 0:
             tool.set_heater(**set_heater_cmd)
 
+    cmd_SET_TOOL_OFFSET_help = "Set an individual tool offset"
+    def cmd_SET_TOOL_OFFSET(self, gcmd):
+        tool_id = gcmd.get_int('TOOL', self.tool_current, minval=0)
+        x_pos = gcmd.get_float('X', None)
+        x_adjust = gcmd.get_float('X_ADJUST', None)
+        y_pos = gcmd.get_float('Y', None)
+        y_adjust = gcmd.get_float('Y_ADJUST', None)
+        z_pos = gcmd.get_float('Z', None)
+        z_adjust = gcmd.get_float('Z_ADJUST', None)
+
+        if tool_id < 0:
+            self.gcode.respond_info("cmd_SET_TOOL_TEMPERATURE: Tool " + str(tool_id) + " is not valid.")
+            return None
+
+        tool = self.printer.lookup_object("tool " + str(tool_id))
+        set_offset_cmd = {}
+
+        if x_pos is not None:
+            set_offset_cmd["x_pos"] = x_pos
+        elif x_adjust is not None:
+            set_offset_cmd["x_adjust"] = x_adjust
+        if y_pos is not None:
+            set_offset_cmd["y_pos"] = y_pos
+        elif y_adjust is not None:
+            set_offset_cmd["y_adjust"] = y_adjust
+        if z_pos is not None:
+            set_offset_cmd["z_pos"] = z_pos
+        elif z_adjust is not None:
+            set_offset_cmd["z_adjust"] = z_adjust
+        if len(set_offset_cmd) > 0:
+            tool.set_offset(**set_offset_cmd)
+
+    cmd_SET_GLOBAL_OFFSET_help = "Set the global tool offset"
+    def cmd_SET_GLOBAL_OFFSET(self, gcmd):
+        x_pos = gcmd.get_float('X', None)
+        x_adjust = gcmd.get_float('X_ADJUST', None)
+        y_pos = gcmd.get_float('Y', None)
+        y_adjust = gcmd.get_float('Y_ADJUST', None)
+        z_pos = gcmd.get_float('Z', None)
+        z_adjust = gcmd.get_float('Z_ADJUST', None)
+
+        if x_pos is not None:
+            self.global_offset[0] = float(x_pos)
+        elif x_adjust is not None:
+            self.global_offset[0] = float(self.global_offset[0]) + float(x_adjust)
+        if y_pos is not None:
+            self.global_offset[1] = float(y_pos)
+        elif y_adjust is not None:
+            self.global_offset[1] = float(self.global_offset[1]) + float(y_adjust)
+        if z_pos is not None:
+            self.global_offset[2] = float(z_pos)
+        elif z_adjust is not None:
+            self.global_offset[2] = float(self.global_offset[2]) + float(z_adjust)
 
     def cmd_test_py(self, gcmd):
         curtime = self.printer.get_reactor().monotonic()
@@ -279,6 +332,7 @@ class ToolLock:
 
     def get_status(self, eventtime= None):
         status = {
+            "global_offset": self.global_offset,
             "tool_current": self.tool_current,
             "saved_fan_speed": self.saved_fan_speed,
             "purge_on_toolchange": self.purge_on_toolchange 

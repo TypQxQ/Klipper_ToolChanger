@@ -91,28 +91,35 @@ Then restart Klipper to pick up the extensions.
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
-* `T_1` - Unload and park all tools.
+* `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of selected or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
   * `P` - Fan of this tool. Default current tool.
 * `TEMPERATURE_WAIT_WITH_TOLERANCE` - Waits for all temperatures, or a specified tool or heater's temperature.
 This command can be used without any additional parameters. Without parameters it waits for bed and current extruder. Only one of either TOOL or HEATER may be used.
-  - `TOOL` Tool number.
-  - `HEATER` Heater number. 0="heater_bed", 1="extruder", 2="extruder1", 3="extruder2", etc. Only works if named as default, this way.
-  - `TOLERANCE` Tolerance in degC. Defaults to 1*C. Wait will wait until heater is between set temperature +/- tolerance.
+  - `TOOL` - Tool number.
+  - `HEATER` - Heater number. 0="heater_bed", 1="extruder", 2="extruder1", 3="extruder2", etc. Only works if named as default, this way.
+  - `TOLERANCE` - Tolerance in degC. Defaults to 1*C. Wait will wait until heater is between set temperature +/- tolerance.
 * `SET_TOOL_TEMPERATURE` - Set tool temperature.
-  * `TOOL`= Tool number, optional. If this parameter is not provided, the current tool is used.
-  * `STDB_TMP`= Standby temperature(s), optional
-  * `ACTV_TMP`= Active temperature(s), optional
-  * `CHNG_STATE` = Change Heater State, optional: 0 = off, 1 = standby temperature(s), 2 = active temperature(s).
-  * `STDB_TIMEOUT` = Time in seconds to wait between changing heater state to standby and setting heater target temperature to standby temperature when standby temperature is lower than tool temperature.
+  * `TOOL` - Tool number, optional. If this parameter is not provided, the current tool is used.
+  * `STDB_TMP` - Standby temperature(s), optional
+  * `ACTV_TMP` - Active temperature(s), optional
+  * `CHNG_STATE` - Change Heater State, optional: 0 = off, 1 = standby temperature(s), 2 = active temperature(s).
+  * `STDB_TIMEOUT` - Time in seconds to wait between changing heater state to standby and setting heater target temperature to standby temperature when standby temperature is lower than tool temperature.
     * Use for example 0.1 to change immediately to standby temperature.
-  * SHTDWN_TIMEOUT = Time in seconds to wait from docking tool to shutting off the heater, optional.
+  * `SHTDWN_TIMEOUT` - Time in seconds to wait from docking tool to shutting off the heater, optional.
     * Use for example 86400 to wait 24h if you want to disable shutdown timer.
 * `Tn` - T0, T1, T2, etc... A select command is created for each tool.
-
+* `SET_GLOBAL_OFFSET` - Set a global offset that can be applied to all tools
+  * `X` / `Y` / `Z` - Set the X/Y/Z offset position
+  * `X_ADJUST` / `Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally
+* `SET_TOOL_OFFSET` - Set the offset of an individual tool
+  * `TOOL` - Tool number, optional. If this parameter is not provided, the current tool is used.
+  * `X` / `Y` / `Z` - Set the X/Y/Z offset position
+  * `X_ADJUST` /`Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally  
 ## Values accesible from Macro for each object
 - **Toollock**
+  - `global_offset` - Global offset.
   - `tool_current` - -2: Unknown tool locked, -1: No tool locked, 0: and up are toolnames.
   - `saved_fan_speed` - Speed saved at each fanspeedchange to be recovered at Toolchange.
   - `purge_on_toolchange` - For use in macros to enable/disable purge/wipe code globaly.
