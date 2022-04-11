@@ -149,9 +149,6 @@ class Tool:
 
     cmd_SelectTool_help = "Select Tool"
     def cmd_SelectTool(self, gcmd):
-        self.Select()
-
-    def Select(self):
         current_tool_id = int(self.toollock.get_tool_current())
 
         self.gcode.respond_info("T" + str(self.name) + " Selected.")
@@ -288,7 +285,7 @@ class Tool:
             elif i == "z_adjust":
                 self.offset[2] = float(self.offset[2]) + float(kwargs[i])
 
-        self.gcode.respond_info("set_offset: T%d offset now set to: %f, %f, %f." % (int(self.name), float(self.offset[0]), float(self.offset[1]), float(self.offset[2])))
+        self.gcode.respond_info("T%d offset now set to: %f, %f, %f." % (int(self.name), float(self.offset[0]), float(self.offset[1]), float(self.offset[2])))
 
     def set_heater(self, **kwargs):
         if self.extruder is None:

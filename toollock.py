@@ -29,7 +29,6 @@ class ToolLock:
         self.gcode.register_command("SAVE_CURRENT_TOOL", self.cmd_SAVE_CURRENT_TOOL, desc=self.cmd_SAVE_CURRENT_TOOL_help)
         self.gcode.register_command("TOOL_LOCK", self.cmd_TOOL_LOCK, desc=self.cmd_TOOL_LOCK_help)
         self.gcode.register_command("TOOL_UNLOCK", self.cmd_TOOL_UNLOCK, desc=self.cmd_TOOL_UNLOCK_help)
-        self.gcode.register_command("TOOL_SELECT", self.cmd_TOOL_SELECT, desc=self.cmd_TOOL_SELECT_help)
         self.gcode.register_command("T_1", self.cmd_T_1, desc=self.cmd_T_1_help)
         self.gcode.register_command("SET_AND_SAVE_FAN_SPEED", self.cmd_SET_AND_SAVE_FAN_SPEED, desc=self.cmd_SET_AND_SAVE_FAN_SPEED_help)
         self.gcode.register_command("TEMPERATURE_WAIT_WITH_TOLERANCE", self.cmd_TEMPERATURE_WAIT_WITH_TOLERANCE, desc=self.cmd_TEMPERATURE_WAIT_WITH_TOLERANCE_help)
@@ -69,11 +68,6 @@ class ToolLock:
         self.SaveCurrentTool(-1)
         self.gcode.run_script_from_command("M117 ToolLock Unlocked.")
 
-    cmd_TOOL_SELECT_help = "Select a tool."
-    def cmd_TOOL_SELECT(self, gcmd):
-        tool_id = gcmd.get_int('T', None, minval=0)
-        if tool_id is not None:
-            self.printer.lookup_object('tool ' + str(tool_id)).Select()
 
     def PrinterIsHomedForToolchange(self, lazy_home_when_parking =0):
         curtime = self.printer.get_reactor().monotonic()
@@ -317,6 +311,8 @@ class ToolLock:
             self.global_offset[2] = float(z_pos)
         elif z_adjust is not None:
             self.global_offset[2] = float(self.global_offset[2]) + float(z_adjust)
+
+        self.gcode.respond_info("Global offset now set to: %f, %f, %f." % (float(self.global_offset[0]), float(self.global_offset[1]), float(self.global_offset[2])))
 
     def cmd_test_py(self, gcmd):
         curtime = self.printer.get_reactor().monotonic()

@@ -91,8 +91,6 @@ Then restart Klipper to pick up the extensions.
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
-* `TOOL_SELECT` - Select a tool, dropping off the current tool
-  * `T` - Tool number.
 * `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
