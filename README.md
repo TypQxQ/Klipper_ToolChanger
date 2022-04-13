@@ -92,7 +92,7 @@ Then restart Klipper to pick up the extensions.
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
 * `T_1` - Dropoff the current tool without picking up another tool
-* `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of selected or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
+* `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
   * `P` - Fan of this tool. Default current tool.
 * `TEMPERATURE_WAIT_WITH_TOLERANCE` - Waits for all temperatures, or a specified tool or heater's temperature.

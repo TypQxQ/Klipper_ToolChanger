@@ -312,6 +312,8 @@ class ToolLock:
         elif z_adjust is not None:
             self.global_offset[2] = float(self.global_offset[2]) + float(z_adjust)
 
+        self.gcode.respond_info("Global offset now set to: %f, %f, %f." % (float(self.global_offset[0]), float(self.global_offset[1]), float(self.global_offset[2])))
+
     def cmd_test_py(self, gcmd):
         curtime = self.printer.get_reactor().monotonic()
         toolhead = self.printer.lookup_object('toolhead')
