@@ -44,6 +44,7 @@ parameter to specify another tool.
     - Usefull when having sporadic toolchanges in a large print or many toolchanges in a small print.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
 * Current Tool is saved and restored at powerdown. Default but optional.
+* Input shaper parameters for each tool.
 
 ## Installation Instructions
 ### Install with Moonraker Autoupdate Support
@@ -86,11 +87,12 @@ Then restart Klipper to pick up the extensions.
   * Mean Layer time Standby mode. - Save time at every layerchange and at toolchange set to mean time of last 3 layers *2 or at last layer *1.5 with a Maximum and a minimum time. Needs to be analyzed further.
   * Save the time it was in Standby last time and apply a fuzzfactor. Put tool in standby and heatup with presumption that next time will be aproximatley after the same time as last. +/- Fuzzfactor.
 * Implement Fan Scale. Can change fan scale for diffrent materials or tools from slicer at toolchange. Maybe max and min too?
-* Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament. But then the filament in diffrent tools??
+* Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament custom gcode.
 
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
+* `Tn` - T0, T1, T2, etc... A select command is created for each tool.
 * `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
@@ -109,7 +111,6 @@ This command can be used without any additional parameters. Without parameters i
     * Use for example 0.1 to change immediately to standby temperature.
   * `SHTDWN_TIMEOUT` - Time in seconds to wait from docking tool to shutting off the heater, optional.
     * Use for example 86400 to wait 24h if you want to disable shutdown timer.
-* `Tn` - T0, T1, T2, etc... A select command is created for each tool.
 * `SET_GLOBAL_OFFSET` - Set a global offset that can be applied to all tools
   * `X` / `Y` / `Z` - Set the X/Y/Z offset position
   * `X_ADJUST` / `Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally
