@@ -121,6 +121,14 @@ class Tool:
         if not isinstance(self.offset, list):
             self.offset = str(self.offset).split(',')
 
+        # Tool specific input shaper parameters. Initiated with Klipper standard values where not specified.
+        self.shaper_freq_x = config.get('shaper_freq_x', pp_status['shaper_freq_x'])                     
+        self.shaper_freq_y = config.get('shaper_freq_y', pp_status['shaper_freq_y'])                     
+        self.shaper_type_x = config.get('shaper_type_x', pp_status['shaper_type_x'])                     
+        self.shaper_type_y = config.get('shaper_type_y', pp_status['shaper_type_y'])                     
+        self.shaper_damping_ratio_x = config.get('shaper_damping_ratio_x', pp_status['shaper_damping_ratio_x'])                     
+        self.shaper_damping_ratio_y = config.get('shaper_damping_ratio_y', pp_status['shaper_damping_ratio_y'])                     
+
         ##### Standby settings #####
         if self.extruder is not None:
             if self.physical_parent_id < 0 or self.physical_parent_id == self.name:
