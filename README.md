@@ -44,6 +44,7 @@ parameter to specify another tool.
     - Usefull when having sporadic toolchanges in a large print or many toolchanges in a small print.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
 * Current Tool is saved and restored at powerdown. Default but optional.
+* Input shaper parameters for each tool.
 
 ## Installation Instructions
 ### Install with Moonraker Autoupdate Support
@@ -86,7 +87,7 @@ Then restart Klipper to pick up the extensions.
   * Mean Layer time Standby mode. - Save time at every layerchange and at toolchange set to mean time of last 3 layers *2 or at last layer *1.5 with a Maximum and a minimum time. Needs to be analyzed further.
   * Save the time it was in Standby last time and apply a fuzzfactor. Put tool in standby and heatup with presumption that next time will be aproximatley after the same time as last. +/- Fuzzfactor.
 * Implement Fan Scale. Can change fan scale for diffrent materials or tools from slicer at toolchange. Maybe max and min too?
-* Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament. But then the filament in diffrent tools??
+* Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament custom gcode.
 
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
