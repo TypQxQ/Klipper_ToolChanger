@@ -267,13 +267,11 @@ class Tool:
             self.gcode.respond_info("Tool.Dropoff: Printer not homed and Lazy homing option is: " + self.lazy_home_when_parking)
             return None
 
-        # Save fan if has a fan. Is not actually needed as it is run with every M106 command
-        #if self.fan is not None:
-        #    fanspeed = self.printer.lookup_object('fan_generic extruder_partfan').get_status(eventtime)["speed"]
-        #    self.toollock.SaveFanSpeed(fanspeed)
-        #    self.gcode.run_script_from_command(
-        #        "SET_FAN_SPEED FAN=%s SPEED=0" % 
-        #        self.fan)
+        # Turn off fan if has a fan.
+        if self.fan is not None:
+            self.gcode.run_script_from_command(
+                "SET_FAN_SPEED FAN=" + self.fan + " SPEED=0" )
+            
         # Run the gcode for dropoff.
         try:
             context = self.dropoff_gcode_template.create_template_context()
