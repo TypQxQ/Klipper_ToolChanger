@@ -264,7 +264,7 @@ class Tool:
     def Dropoff(self):
         # Check if homed
         if not self.toollock.PrinterIsHomedForToolchange():
-            self.gcode.respond_info("Tool.Dropoff: Printer not homed and Lazy homing option is: " + self.lazy_home_when_parking)
+            self.gcode.respond_info("Tool.Dropoff: Printer not homed and Lazy homing option is: " + str(self.lazy_home_when_parking))
             return None
 
         # Turn off fan if has a fan.
