@@ -92,6 +92,7 @@ Then restart Klipper to pick up the extensions.
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
+* `Tn` - T0, T1, T2, etc... A select command is created for each tool.
 * `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
@@ -110,7 +111,6 @@ This command can be used without any additional parameters. Without parameters i
     * Use for example 0.1 to change immediately to standby temperature.
   * `SHTDWN_TIMEOUT` - Time in seconds to wait from docking tool to shutting off the heater, optional.
     * Use for example 86400 to wait 24h if you want to disable shutdown timer.
-* `Tn` - T0, T1, T2, etc... A select command is created for each tool.
 * `SET_GLOBAL_OFFSET` - Set a global offset that can be applied to all tools
   * `X` / `Y` / `Z` - Set the X/Y/Z offset position
   * `X_ADJUST` / `Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally
