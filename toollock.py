@@ -35,6 +35,7 @@ class ToolLock:
         self.gcode.register_command("SET_TOOL_TEMPERATURE", self.cmd_SET_TOOL_TEMPERATURE, desc=self.cmd_SET_TOOL_TEMPERATURE_help)
         self.gcode.register_command("SET_GLOBAL_OFFSET", self.cmd_SET_GLOBAL_OFFSET, desc=self.cmd_SET_GLOBAL_OFFSET_help)
         self.gcode.register_command("SET_TOOL_OFFSET", self.cmd_SET_TOOL_OFFSET, desc=self.cmd_SET_TOOL_OFFSET_help)   
+        self.gcode.register_command("SET_PURGE_ON_TOOLCHANGE", self.cmd_SET_PURGE_ON_TOOLCHANGE, desc=self.cmd_SET_PURGE_ON_TOOLCHANGE_help)
 
         self.gcode.register_mux_command("TEST_PY", "EXTRUDER", None, self.cmd_test_py)
         
@@ -121,7 +122,6 @@ class ToolLock:
             self.ToolLock(True)
             self.SaveCurrentTool(str(t))
             self.gcode.run_script_from_command("M117 ToolLock initialized with T%s." % self.tool_current) 
-
 
     cmd_SET_AND_SAVE_FAN_SPEED_help = "Save the fan speed to be recovered at ToolChange."
     def cmd_SET_AND_SAVE_FAN_SPEED(self, gcmd):
@@ -313,6 +313,16 @@ class ToolLock:
             self.global_offset[2] = float(self.global_offset[2]) + float(z_adjust)
 
         self.gcode.respond_info("Global offset now set to: %f, %f, %f." % (float(self.global_offset[0]), float(self.global_offset[1]), float(self.global_offset[2])))
+
+    cmd_SET_PURGE_ON_TOOLCHANGE_help = "Set the global variable if the tool should be purged or primed with filament at toolchange."
+    def cmd_SET_PURGE_ON_TOOLCHANGE(self, gcmd = None):
+        value = str(gcmd.get('VALUE')).upper()
+        # self.gcode.respond_info("SET_PURGE_ON_TOOLCHANGE running: " + str(value))
+        if value == 'FALSE' or value == '0':
+            self.purge_on_toolchange = False
+        else:
+            self.purge_on_toolchange = True
+        # self.gcode.respond_info("SET_PURGE_ON_TOOLCHANGE running: " + str(self.purge_on_toolchange))
 
     def cmd_test_py(self, gcmd):
         curtime = self.printer.get_reactor().monotonic()
