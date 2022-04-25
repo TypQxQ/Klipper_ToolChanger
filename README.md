@@ -89,6 +89,9 @@ Then restart Klipper to pick up the extensions.
 * Implement Fan Scale. Can change fan scale for diffrent materials or tools from slicer at toolchange. Maybe max and min too?
 * Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament custom gcode.
 
+## Configuration requirements
+* `[input_shaper]` needs to be used for input shaper to wordk.
+
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command

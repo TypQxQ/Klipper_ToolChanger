@@ -121,6 +121,14 @@ class Tool:
         if not isinstance(self.offset, list):
             self.offset = str(self.offset).split(',')
 
+        # Tool specific input shaper parameters. Initiated with Klipper standard values where not specified.
+        self.shaper_freq_x = config.get('shaper_freq_x', pp_status['shaper_freq_x'])                     
+        self.shaper_freq_y = config.get('shaper_freq_y', pp_status['shaper_freq_y'])                     
+        self.shaper_type_x = config.get('shaper_type_x', pp_status['shaper_type_x'])                     
+        self.shaper_type_y = config.get('shaper_type_y', pp_status['shaper_type_y'])                     
+        self.shaper_damping_ratio_x = config.get('shaper_damping_ratio_x', pp_status['shaper_damping_ratio_x'])                     
+        self.shaper_damping_ratio_y = config.get('shaper_damping_ratio_y', pp_status['shaper_damping_ratio_y'])                     
+
         ##### Standby settings #####
         if self.extruder is not None:
             if self.physical_parent_id < 0 or self.physical_parent_id == self.name:
@@ -264,16 +272,14 @@ class Tool:
     def Dropoff(self):
         # Check if homed
         if not self.toollock.PrinterIsHomedForToolchange():
-            self.gcode.respond_info("Tool.Dropoff: Printer not homed and Lazy homing option is: " + self.lazy_home_when_parking)
+            self.gcode.respond_info("Tool.Dropoff: Printer not homed and Lazy homing option is: " + str(self.lazy_home_when_parking))
             return None
 
-        # Save fan if has a fan. Is not actually needed as it is run with every M106 command
-        #if self.fan is not None:
-        #    fanspeed = self.printer.lookup_object('fan_generic extruder_partfan').get_status(eventtime)["speed"]
-        #    self.toollock.SaveFanSpeed(fanspeed)
-        #    self.gcode.run_script_from_command(
-        #        "SET_FAN_SPEED FAN=%s SPEED=0" % 
-        #        self.fan)
+        # Turn off fan if has a fan.
+        if self.fan is not None:
+            self.gcode.run_script_from_command(
+                "SET_FAN_SPEED FAN=" + self.fan + " SPEED=0" )
+            
         # Run the gcode for dropoff.
         try:
             context = self.dropoff_gcode_template.create_template_context()
