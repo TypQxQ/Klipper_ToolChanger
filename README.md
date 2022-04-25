@@ -121,6 +121,7 @@ This command can be used without any additional parameters. Without parameters i
   * `TOOL` - Tool number, optional. If this parameter is not provided, the current tool is used.
   * `X` / `Y` / `Z` - Set the X/Y/Z offset position
   * `X_ADJUST` /`Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally  
+* `SET_PURGE_ON_TOOLCHANGE` - Sets a global variable that can disable all purging (can be used in macros) when loading/unloading. For example when doing a TAMV/ZTATP tool alignement.
 ## Values accesible from Macro for each object
 - **Toollock**
   - `global_offset` - Global offset.
