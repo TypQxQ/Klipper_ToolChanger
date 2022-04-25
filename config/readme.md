@@ -13,8 +13,8 @@ A Tool that is used as physical_parent must be configured before other virtual t
 
 ## Configuration requirements
 
-`[save_variables]` must be used as described in the Klipper documentation.
-`[input_shaper]` needs to be used for input shaper to wordk.
+* `[save_variables]` must be used as described in the Klipper documentation.
+* `[input_shaper]` needs to be used for input shaper to work.
 
 ### [toollock]
 
