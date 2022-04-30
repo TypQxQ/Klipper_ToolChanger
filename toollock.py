@@ -366,7 +366,8 @@ class ToolLock:
             "tool_current": self.tool_current,
             "saved_fan_speed": self.saved_fan_speed,
             "purge_on_toolchange": self.purge_on_toolchange,
-            "restore_position_on_toolchange": self.restore_position_on_toolchange
+            "restore_position_on_toolchange": self.restore_position_on_toolchange,
+            "saved_position": self.saved_position
         }
         return status
 
