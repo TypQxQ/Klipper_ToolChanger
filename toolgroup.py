@@ -24,7 +24,6 @@ class ToolGroup:
        # -1 = none, 1= Only load filament, 2= Wipe in front of carriage, 3= Pebble wiper, 4= First Silicone, then pebble. Defaults to 0.
         self.pickup_gcode = config.get('pickup_gcode', '')
         self.dropoff_gcode = config.get('dropoff_gcode', '')
-        self.lazy_home_when_parking = config.get('lazy_home_when_parking', 0)                      # 0 = none, 1= Only load filament, 2= Wipe in front of carriage, 3= Pebble wiper, 4= First Silicone, then pebble. Defaults to 0.
         self.meltzonelength = config.get('meltzonelength', 0)
         self.idle_to_standby_time = config.getfloat( 'idle_to_standby_time', 30, minval = 0.1)
         self.idle_to_powerdown_time = config.getfloat( 'idle_to_powerdown_time', 600, minval = 0.1)
