@@ -27,7 +27,7 @@ class Tool:
         self.heater_state = 0               # 0 = off, 1 = standby temperature, 2 = active temperature. Placeholder. Requred on Physical tool.
         self.heater_active_temp = 0         # Temperature to set when in active mode. Placeholder. Requred on Physical and virtual tool if any has extruder.
         self.heater_standby_temp = 0        # Temperature to set when in standby mode.  Placeholder. Requred on Physical and virtual tool if any has extruder.
-        self.idle_to_standby_time = 30      # Time in seconds from being parked to setting temperature to standby the temperature above. Use 0.1 to change imediatley to standby temperature. Requred on Physical tool
+        self.idle_to_standby_time = 0.1     # Time in seconds from being parked to setting temperature to standby the temperature above. Use 0.1 to change imediatley to standby temperature. Requred on Physical tool
         self.idle_to_powerdown_time = 600   # Time in seconds from being parked to setting temperature to 0. Use something like 86400 to wait 24h if you want to disable. Requred on Physical tool.
 
         # Tool specific input shaper parameters. Initiated as Klipper standard.
@@ -166,7 +166,7 @@ class Tool:
 
     cmd_SelectTool_help = "Select Tool"
     def cmd_SelectTool(self, gcmd):
-        current_tool_id = int(self.toollock.get_tool_current())
+        current_tool_id = int(self.toollock.get_status()['tool_current']) # int(self.toollock.get_tool_current())
 
         self.gcode.respond_info("T" + str(self.name) + " Selected.")
         self.gcode.respond_info("Current Tool is T" + str(current_tool_id) + ".")
@@ -178,10 +178,21 @@ class Tool:
         if current_tool_id < -1:
             raise self.printer.command_error("TOOL_PICKUP: Unknown tool already mounted Can't park it before selecting new tool.")
 
-        if self.extruder is not None:               # If the new tool to be selected has an extruder.
-#            self.gcode.run_script_from_command("M568 P%d A2" % (int(self.name)))
-            pass
+        if self.extruder is not None:               # If the new tool to be selected has an extruder prepare warmup before actual tool change so all unload commands will be done while heating up.
+            self.gcode.run_script_from_command("M568 P%d A2" % (int(self.name)))
+            #pass
 
+        # Check if we have a passed GCODE parameter for Restore Position, if not then set it to false.
+        param = gcmd.get('RESTORE_POSITION', 0)
+        param = int(str(param)[-1])
+
+        self.toollock.Set_restore_position_on_toolchange(param)
+        self.gcode.respond_info("RESTORE_POSITION: " + str(param))
+        if param != 0:
+            self.toollock.SavePosition()
+            self.gcode.respond_info("RESTORE_POSITION: saved")
+
+        # Drop any tools already mounted.
         if current_tool_id >= 0:                    # If there is a current tool already selected and it's a dropable.
             current_tool = self.printer.lookup_object('tool ' + str(current_tool_id))
                                                         # If the next tool is not another virtual tool on the same physical tool.
@@ -249,7 +260,7 @@ class Tool:
         # Restore fan if has a fan.
         if self.fan is not None:
             self.gcode.run_script_from_command(
-                "SET_FAN_SPEED FAN=" + self.fan + " SPEED=" + str(self.toollock.get_saved_fan_speed()) )
+                "SET_FAN_SPEED FAN=" + self.fan + " SPEED=" + str(self.toollock.get_status()['saved_fan_speed'])) #  self.toollock.get_saved_fan_speed()) )
 
         # Set Tool specific input shaper.
         if self.shaper_freq_x != 0 or self.shaper_freq_y != 0:
@@ -266,8 +277,6 @@ class Tool:
         # Save current picked up tool and print on screen.
         self.toollock.SaveCurrentTool(self.name)
         self.gcode.run_script_from_command("M117 T%d picked up." % (self.name))
-
-
 
     def Dropoff(self):
         # Check if homed
