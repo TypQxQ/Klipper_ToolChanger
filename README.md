@@ -7,7 +7,7 @@ toolchanger from RRF and Duet3 to Klipper.
 
 I welcome all contribution!
 
-This is still a work in progress. Treat it as a alpha version.
+This is working great but treat it as a Beta version in development.
 
 ## Features
 
@@ -45,6 +45,7 @@ parameter to specify another tool.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
 * Current Tool is saved and restored at powerdown. Default but optional.
 * Input shaper parameters for each tool.
+* Position prior to toolchange can optionaly be saved and restored.
 
 ## Installation Instructions
 ### Install with Moonraker Autoupdate Support
@@ -82,11 +83,10 @@ cp ./*.py ~/klipper/klippy/extras/
 Then restart Klipper to pick up the extensions.
 
 ## To do:
-* Change virtual tools code.
+* Add virtual tools select code.
 * Add selectable automatic calculation of active times based on previous times. Ex:
   * Mean Layer time Standby mode. - Save time at every layerchange and at toolchange set to mean time of last 3 layers *2 or at last layer *1.5 with a Maximum and a minimum time. Needs to be analyzed further.
   * Save the time it was in Standby last time and apply a fuzzfactor. Put tool in standby and heatup with presumption that next time will be aproximatley after the same time as last. +/- Fuzzfactor.
-* Implement Fan Scale. Can change fan scale for diffrent materials or tools from slicer at toolchange. Maybe max and min too?
 * Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament custom gcode.
 
 ## Configuration requirements
@@ -95,7 +95,8 @@ Then restart Klipper to pick up the extensions.
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
-* `Tn` - T0, T1, T2, etc... A select command is created for each tool.
+* `Tn` - T0, T1, T2, etc... A select command is created for each tool. 
+  * `RESTORE_POSITION` - Optional that will save position and type of restore, Defaults to 0, do not restore, 1will restore XY and 2 will restore XYZ withe the `RESTORE_POSITION` command.
 * `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
@@ -122,12 +123,16 @@ This command can be used without any additional parameters. Without parameters i
   * `X` / `Y` / `Z` - Set the X/Y/Z offset position
   * `X_ADJUST` /`Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally  
 * `SET_PURGE_ON_TOOLCHANGE` - Sets a global variable that can disable all purging (can be used in macros) when loading/unloading. For example when doing a TAMV/ZTATP tool alignement.
+* `SAVE_POSITION` - Save the current G-Code position of the toolhead.
+* `RESTORE_POSITION` - Restore position to the latest saved position. RESTORE_POSITION parameter as in Tn.
 ## Values accesible from Macro for each object
 - **Toollock**
   - `global_offset` - Global offset.
   - `tool_current` - -2: Unknown tool locked, -1: No tool locked, 0: and up are toolnames.
   - `saved_fan_speed` - Speed saved at each fanspeedchange to be recovered at Toolchange.
   - `purge_on_toolchange` - For use in macros to enable/disable purge/wipe code globaly.
+  - `restore_position_on_toolchange` - If the latest T# command had a RESTORE_POSITION parameter to other than 0
+  - `saved_position` - The position saved when the latest T# command had a RESTORE_POSITION parameter to other than 0
 - **Tool** - The tool calling this macro is referenced as `myself` in macros. When running for example `T3` to pickup the physical tool, in `pickup_gcode:` of one can write `{myself.name}` which would return `3`.
   - `name` - id. 0, 1, 2, etc.
   - `is_virtual` - If this tool has another layer of toolchange possible.
