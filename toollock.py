@@ -315,13 +315,12 @@ class ToolLock:
 
     cmd_SET_PURGE_ON_TOOLCHANGE_help = "Set the global variable if the tool should be purged or primed with filament at toolchange."
     def cmd_SET_PURGE_ON_TOOLCHANGE(self, gcmd = None):
-        value = str(gcmd.get('VALUE')).upper()
-        # self.gcode.respond_info("SET_PURGE_ON_TOOLCHANGE running: " + str(value))
-        if value == 'FALSE' or value == '0':
+        param = gcmd.get('VALUE', 'FALSE')
+
+        if param.upper() == 'FALSE' or param == '0':
             self.purge_on_toolchange = False
         else:
             self.purge_on_toolchange = True
-        # self.gcode.respond_info("SET_PURGE_ON_TOOLCHANGE running: " + str(self.purge_on_toolchange))
 
     def SaveFanSpeed(self, fanspeed):
         self.saved_fan_speed = float(fanspeed)
@@ -337,9 +336,15 @@ class ToolLock:
         gcode_move = self.printer.lookup_object('gcode_move')
         self.saved_position = gcode_move._get_gcode_position()
 
-    cmd_RESTORE_POSITION_help = "Restore a previously saved G-Code position if it was specified in the toolchange command, T1 RESTORE_POSITION=1"
+    cmd_RESTORE_POSITION_help = "Restore a previously saved G-Code position if it was specified in the toolchange T# command."
     def cmd_RESTORE_POSITION(self, gcmd):
         self.gcode.respond_info("cmd_RESTORE_POSITION running: " + str(self.restore_position_on_toolchange))
+
+        param = gcmd.get_int('RESTORE_POSITION', None, minval=0, maxval=2)
+
+        if param is not None:
+            if param == 0 or param == 1:
+                self.restore_position_on_toolchange = param
 
         if self.restore_position_on_toolchange == 0:
             return
