@@ -96,7 +96,7 @@ Then restart Klipper to pick up the extensions.
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
 * `Tn` - T0, T1, T2, etc... A select command is created for each tool. 
-  * `RESTORE_POSITION` - Optional that will save position and type of restore, Defaults to 0, do not restore, 1will restore XY and 2 will restore XYZ withe the `RESTORE_POSITION` command.
+  * `RESTORE_POSITION` - Optional parameter that will save position and type of restore, Defaults to 0, do not restore, 1 will restore XY and 2 will restore XYZ with the `RESTORE_POSITION` command, see below.
 * `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
@@ -124,7 +124,7 @@ This command can be used without any additional parameters. Without parameters i
   * `X_ADJUST` /`Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally  
 * `SET_PURGE_ON_TOOLCHANGE` - Sets a global variable that can disable all purging (can be used in macros) when loading/unloading. For example when doing a TAMV/ZTATP tool alignement.
 * `SAVE_POSITION` - Save the current G-Code position of the toolhead.
-* `RESTORE_POSITION` - Restore position to the latest saved position. RESTORE_POSITION parameter as in Tn.
+* `RESTORE_POSITION` - Restore position to the latest saved position. RESTORE_POSITION parameter as in Tn. This command is usually used inside the pickup_gcode script.
 ## Values accesible from Macro for each object
 - **Toollock**
   - `global_offset` - Global offset.
