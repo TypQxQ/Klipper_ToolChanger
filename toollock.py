@@ -343,7 +343,7 @@ class ToolLock:
         param = gcmd.get_int('RESTORE_POSITION', None, minval=0, maxval=2)
 
         if param is not None:
-            if param == 0 or param == 1:
+            if param == 0 or param == 1 or param == 2:
                 self.restore_position_on_toolchange = param
 
         if self.restore_position_on_toolchange == 0:
