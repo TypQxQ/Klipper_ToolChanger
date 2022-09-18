@@ -183,11 +183,12 @@ class Tool:
             #pass
 
         # If optional RESTORE_POSITION_TYPE parameter is passed as 1 or 2 then save current position and restore_position_on_toolchange_type as passed. Otherwise do not change either the restore_position_on_toolchange_type or saved_position. This makes it possible to call SAVE_POSITION or SAVE_CURRENT_POSITION before the actual T command.
-        param = gcmd.get_int('RESTORE_POSITION_TYPE', 0, minval=0, maxval=2)
-        if restore_position_type in [ 1, 2 ]:
-            self.toollock.SaveCurrentPosition(param)
-#        else:
-#            self.toollock.SavePosition()  # Sets restore_position_on_toolchange_type to 0
+        param = gcmd.get_int('RESTORE_POSITION_TYPE', None, minval=0, maxval=2)
+        if param is not None:
+            if restore_position_type in [ 1, 2 ]:
+                self.toollock.SaveCurrentPosition(param) # Sets restore_position_on_toolchange_type to 1 or 2 and saves current position
+            else:
+                self.toollock.SavePosition()  # Sets restore_position_on_toolchange_type to 0
 
         # Drop any tools already mounted.
         if current_tool_id >= 0:                    # If there is a current tool already selected and it's a dropable.
