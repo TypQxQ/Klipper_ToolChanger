@@ -359,8 +359,11 @@ class ToolLock:
     def cmd_SAVE_CURRENT_POSITION(self, gcmd):
         # Save optional RESTORE_POSITION_TYPE parameter to restore_position_on_toolchange_type variable.
         param = gcmd.get_int('RESTORE_POSITION_TYPE', None, minval=0, maxval=2)
-        if param is not None:
-            if param == 0 or param == 1 or param == 2:
+        self.SaveCurrentPosition(param)
+
+    def SaveCurrentPosition(self, restore_position_type = None):
+        if restore_position_type is not None:
+            if restore_position_type in [ 0, 1, 2 ]:
                 self.restore_position_on_toolchange_type = param
         
         gcode_move = self.printer.lookup_object('gcode_move')
