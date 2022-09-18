@@ -123,15 +123,33 @@ This command can be used without any additional parameters. Without parameters i
   * `X` / `Y` / `Z` - Set the X/Y/Z offset position
   * `X_ADJUST` /`Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally  
 * `SET_PURGE_ON_TOOLCHANGE` - Sets a global variable that can disable all purging (can be used in macros) when loading/unloading. For example when doing a TAMV/ZTATP tool alignement.
-* `SAVE_POSITION` - Save the current G-Code position of the toolhead.
-* `RESTORE_POSITION` - Restore position to the latest saved position. RESTORE_POSITION parameter as in Tn. This command is usually used inside the pickup_gcode script.
+* `SAVE_POSITION` - Sets the Restore type and saves specified position for the toolhead. This command is usually used inside the custom g-code of the slicer software. The restore_position_on_toolchange_type will be changed to reflect the passed parameters.
+  * X= X position to save, optional but Y must be specifie or this will be ignored.
+  * Y= Y position to save, optional but X must be specifie or this will be ignored.
+  * Z= Z position to save, optional but X and Y must be specifie or this will be ignored.
+    * With no parameters it will set Restore type to 0, no restore.
+    * With X and Y parameters it will save the specified X and Y. Sets restore type to 1, restore XY.
+    * With X, Y and Z parameters it will save the specified X, Y and Z. Sets restore type to 2, restore XYZ.
+* `SAVE_CURRENT_POSITION` - Save the current G-Code position of the toolhead. This command is usually used inside the pickup_gcode script or the custom g-code of the slicer software.
+  * RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_position_on_toolchange_type will not be changed.
+    * 0: No restore
+    * 1: Restore XY
+    * 2: Restore XYZ
+* `RESTORE_POSITION` - Restore position to the latest saved position. This command is usually used inside the pickup_gcode script.
+  * RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_position_on_toolchange_type will be used.
+    * 0: No restore
+    * 1: Restore XY
+    * 2: Restore XYZ
 ## Values accesible from Macro for each object
 - **Toollock**
   - `global_offset` - Global offset.
   - `tool_current` - -2: Unknown tool locked, -1: No tool locked, 0: and up are toolnames.
   - `saved_fan_speed` - Speed saved at each fanspeedchange to be recovered at Toolchange.
   - `purge_on_toolchange` - For use in macros to enable/disable purge/wipe code globaly.
-  - `restore_position_on_toolchange` - If the latest T# command had a RESTORE_POSITION parameter to other than 0
+  - `restore_position_on_toolchange_type` - The type of restore position:
+    - 0: No restore
+    - 1: Restore XY
+    - 2: Restore XYZ
   - `saved_position` - The position saved when the latest T# command had a RESTORE_POSITION parameter to other than 0
 - **Tool** - The tool calling this macro is referenced as `myself` in macros. When running for example `T3` to pickup the physical tool, in `pickup_gcode:` of one can write `{myself.name}` which would return `3`.
   - `name` - id. 0, 1, 2, etc.
