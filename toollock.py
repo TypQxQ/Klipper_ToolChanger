@@ -338,7 +338,7 @@ class ToolLock:
         param_X = gcmd.get_float('X', None)
         param_Y = gcmd.get_float('Y', None)
         param_Z = gcmd.get_float('Z', None)
-        SaveCurrentPosition(param_X, param_Y, param_Z):
+        self.SavePosition(param_X, param_Y, param_Z)
 
     def SavePosition(self, param_X = None, param_Y = None, param_Z = None):
         if param_X is None or param_Y is None:
