@@ -32,7 +32,8 @@ class ToolLock:
             'SAVE_CURRENT_TOOL', 'TOOL_LOCK', 'TOOL_UNLOCK',
             'T_1', 'SET_AND_SAVE_FAN_SPEED', 'TEMPERATURE_WAIT_WITH_TOLERANCE', 
             'SET_TOOL_TEMPERATURE', 'SET_GLOBAL_OFFSET', 'SET_TOOL_OFFSET',
-            'SET_PURGE_ON_TOOLCHANGE', 'SAVE_POSITION', 'RESTORE_POSITION']
+            'SET_PURGE_ON_TOOLCHANGE', 'SAVE_POSITION', 'SAVE_CURRENT_POSITION', 
+            'RESTORE_POSITION']
         for cmd in handlers:
             func = getattr(self, 'cmd_' + cmd)
             desc = getattr(self, 'cmd_' + cmd + '_help', None)
@@ -325,14 +326,28 @@ class ToolLock:
     def SaveFanSpeed(self, fanspeed):
         self.saved_fan_speed = float(fanspeed)
        
-    def Set_restore_position_on_toolchange(self, value):
-        self.restore_position_on_toolchange = value
-
-    cmd_SAVE_POSITION_help = "Save the current G-Code position."
+    cmd_SAVE_POSITION_help = "Save the specified G-Code position."
     def cmd_SAVE_POSITION(self, gcmd):
-        self.SavePosition()
+        param_X = gcmd.get_float('X', None)
+        param_Y = gcmd.get_float('Y', None)
+        param_Z = gcmd.get_float('Z', None)
+        
+        if param_X is None or param_Y is None:
+            self.restore_position_on_toolchange = 0
+            return
+        elif param_Z is None:
+            self.restore_position_on_toolchange = 1
+        else:
+            self.restore_position_on_toolchange = 2
 
-    def SavePosition(self):
+        self.saved_position = [param_X, param_Y, param_Z]
+
+
+    cmd_SAVE_CURRENT_POSITION_help = "Save the current G-Code position."
+    def cmd_SAVE_CURRENT_POSITION(self, gcmd):
+        self.SaveCurrentPosition()
+
+    def SaveCurrentPosition(self):
         gcode_move = self.printer.lookup_object('gcode_move')
         self.saved_position = gcode_move._get_gcode_position()
 
@@ -343,7 +358,7 @@ class ToolLock:
         param = gcmd.get_int('RESTORE_POSITION', None, minval=0, maxval=2)
 
         if param is not None:
-            if param == 0 or param == 1 or param == 2:
+            if param == 0 or param == 1:
                 self.restore_position_on_toolchange = param
 
         if self.restore_position_on_toolchange == 0:

@@ -186,11 +186,8 @@ class Tool:
         param = gcmd.get('RESTORE_POSITION', 0)
         param = int(str(param)[-1])
 
-        self.toollock.Set_restore_position_on_toolchange(param)
-        self.gcode.respond_info("RESTORE_POSITION: " + str(param))
         if param != 0:
-            self.toollock.SavePosition()
-            self.gcode.respond_info("RESTORE_POSITION: saved")
+            self.toollock.SaveCurrentPosition()
 
         # Drop any tools already mounted.
         if current_tool_id >= 0:                    # If there is a current tool already selected and it's a dropable.
