@@ -21,7 +21,7 @@ class ToolLock:
         self.purge_on_toolchange = config.getboolean(
             'purge_on_toolchange', True)
         self.saved_position = None
-        self.restore_position_on_toolchange = 0   # 0: Don't restore; 1: Restore XY; 2: Restore XYZ
+        self.restore_position_on_toolchange_type = 0   # 0: Don't restore; 1: Restore XY; 2: Restore XYZ
 
         # G-Code macros
         self.tool_lock_gcode_template = gcode_macro.load_template(config, 'tool_lock_gcode', '')
@@ -366,7 +366,7 @@ class ToolLock:
     def SaveCurrentPosition(self, restore_position_type = None):
         if restore_position_type is not None:
             if restore_position_type in [ 0, 1, 2 ]:
-                self.restore_position_on_toolchange_type = param
+                self.restore_position_on_toolchange_type = restore_position_type
         
         gcode_move = self.printer.lookup_object('gcode_move')
         self.saved_position = gcode_move._get_gcode_position()
@@ -397,7 +397,7 @@ class ToolLock:
             p = self.saved_position
             if self.restore_position_on_toolchange_type == 1:
                 v=str("G1 X%.3f Y%.3f" % (p[0], p[1]))
-            elif self.restore_position_on_toolchang_typee == 2:
+            elif self.restore_position_on_toolchange_type == 2:
                 v=str("G1 X%.3f Y%.3f Z%.3f" % (p[0], p[1], p[2]))
             # Restore position
             self.gcode.respond_info("cmd_RESTORE_POSITION running: " + v)
