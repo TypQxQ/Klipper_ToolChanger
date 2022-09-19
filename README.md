@@ -96,7 +96,7 @@ Then restart Klipper to pick up the extensions.
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
 * `Tn` - T0, T1, T2, etc... A select command is created for each tool. 
-  * `RESTORE_POSITION_TYPE` - Optional parameter that will save position and type of restore, Defaults to not changing anything, 0 to not restore, 1 will restore XY to current position and 2 will restore XYZ to current position with the `RESTORE_POSITION` command, see below.
+  * `R` - Calls SAVE_CURRENT_POSITION with the variable as a RESTORE_POSITION_TYPE. For example "T0 R1" will call "SAVE_CURRENT_POSITION RESTORE_POSITION_TYPE=1" before moving. Positioned is restored with "RESTORE_POSITION" from below.
 * `T_1` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
