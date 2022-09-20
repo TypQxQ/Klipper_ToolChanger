@@ -59,7 +59,6 @@ class Tool:
                     "Name of section '%s' contains illegal characters. Use only integer tool number."
                     % (config.get_name()))
 
-
         ##### ToolGroup #####
         self.toolgroup = 'toolgroup ' + str(config.getint('tool_group'))
         if config.has_section(self.toolgroup):
