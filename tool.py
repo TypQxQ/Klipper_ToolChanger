@@ -4,7 +4,7 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging
-from types import NoneType
+
 
 class Tool:
     def __init__(self, config = None):
@@ -52,13 +52,13 @@ class Tool:
         self.toollock = self.printer.lookup_object('toollock')
 
         ##### Name #####
-        self.name = config.get_name().split()[-1]
-        if not unicode(self.name, 'utf-8').isnumeric():
+        try:
+            _, name = config.get_name().split(" ", 1)
+            self.name = int(name)
+        except ValueError:
             raise config.error(
                     "Name of section '%s' contains illegal characters. Use only integer tool number."
                     % (config.get_name()))
-        else:
-            self.name = int(self.name)
 
         ##### ToolGroup #####
         self.toolgroup = 'toolgroup ' + str(config.getint('tool_group'))
