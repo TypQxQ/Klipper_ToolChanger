@@ -208,32 +208,35 @@ This command can be used without any additional parameters. Without parameters i
   - `physical_parent_id` - As above
   - `lazy_home_when_parking` - As above
 
+## Example configuration
+My full and updated configuration file backup can be found here:
+https://github.com/TypQxQ/DuetBackup/tree/main/qTC-Klipper
 
-Updates 22/02/2023
+## Updates 22/02/2023
 This is not a simple upgrade, it has some configuration updates.
 A namechange to KTCC (Klipper Tool Changer Code) is also in the works).
 
-News:
--Virtual Tools
--Logfile
--Statistics
+- **News:**
+  - Virtual Tools
+  - Logfile
+  - Statistics
 
-Changes to Configuration:
-LogLevel under ToolLock is deprecated.
-Must include new section ```[ktcclog]```.
-New ```virtual_toolload_gcode:`` parameter to tools.
-New ```virtual_toolunload_gcode:`` parameter to tools.
+- **Changes to Configuration:**
+  - LogLevel under ToolLock is deprecated.
+  - Must include new section ```[ktcclog]```.
+  - New ```virtual_toolload_gcode:`` parameter to tools.
+  - New ```virtual_toolunload_gcode:`` parameter to tools.
 
-Changes to commands:
-T_1 => KTCC_TOOL_DROPOFF_ALL
-T# => KTCC_T# (ex. T0 => KTCC_T0)
+- **Changes to commands:**
+  - T_1 => KTCC_TOOL_DROPOFF_ALL
+  - T# => KTCC_T# (ex. T0 => KTCC_T0)
 
-New  commands:
-KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL
-KTCC_LOG_TRACE
-KTCC_LOG_DEBUG
-KTCC_LOG_INFO
-KTCC_LOG_ALWAYS
-KTCC_SET_LOG_LEVEL
-KTCC_DUMP_STATS
-KTCC_RESET_STATS
+- **New  commands:**
+  - KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL
+  - KTCC_LOG_TRACE
+  - KTCC_LOG_DEBUG
+  - KTCC_LOG_INFO
+  - KTCC_LOG_ALWAYS
+  - KTCC_SET_LOG_LEVEL
+  - KTCC_DUMP_STATS
+  - KTCC_RESET_STATS
