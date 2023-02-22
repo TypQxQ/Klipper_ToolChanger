@@ -1,4 +1,4 @@
-# Tools for klipper
+# Tools for klipper (KTCC - Klipper Tool Changer Code)
 
 This are python extras, macros and example config for the
 [Klipper 3D printer firmware](https://github.com/Klipper3d/klipper). I
@@ -16,7 +16,7 @@ having configurable coordinates for parking, zoning, tool offset,
 meltzonelength, extruder, fan, etc.
 *  **Multiple tools can be grouped in ToolGroup.** -Most configuration can
 be inherited from the group if not specified in the tool config section.
-*  **Virtual tools** - A tool can be virtual andhave a physical parent,
+*  **Virtual tools** - A tool can be virtual and have a physical parent,
 inheriting all nonspecified configuration from parent, parent group and
 then toolgroup. Use case example of an ERCF on a PLA tool,a ERCF on a 
 PETG tool, one tool without virtual tools for abrasive and yet another
@@ -46,6 +46,35 @@ parameter to specify another tool.
 * Current Tool is saved and restored at powerdown. Default but optional.
 * Input shaper parameters for each tool.
 * Position prior to toolchange can optionaly be saved and restored.
+* Logging including to file functionality. You can keep the console log to a minimum and send debugging information to `ktcc.log` located in the same directory as Klipper logs.
+* Logging including to file functionality. You can keep the console log to a minimum and send debugging information to `ktcc.log` located in the same directory as Klipper logs.
+# Statistics that look like this:
+```
+ToolChanger Statistics:
+KTCC Statistics:
+7 hours 52 minutes 36 seconds spent mounting tools
+6 hours 42 minutes 46 seconds spent unmounting tools
+30 tool locks completed
+37 tool unlocks completed
+462 tool mounts completed
+461 tool dropoffs completed
+------------
+Tool#0:
+Completed 220 out of 221 mounts in 3 hours 43 minutes 21 seconds. Average of 1 minutes 0 seconds per toolmount.
+Completed 219 out of 220 unmounts in 3 hours 12 minutes 33 seconds. Average of 52 seconds per toolunmount.
+1 hours 4 minutes 16 seconds spent selected. 23 hours 7 minutes 14 seconds with active heater and 49 minutes 44 seconds with standby heater.
+------------
+Tool#1:
+Completed 124 out of 124 mounts in 2 hours 5 minutes 7 seconds. Average of 1 minutes 0 seconds per toolmount.
+Completed 124 out of 125 unmounts in 1 hours 49 minutes 5 seconds. Average of 52 seconds per toolunmount.
+10 hours 44 minutes 21 seconds spent selected. 0 seconds with active heater and 0 seconds with standby heater.
+------------
+Tool#49:
+Completed 8 out of 8 mounts in 1 minutes 7 seconds. Average of 8 seconds per toolmount.
+Completed 8 out of 8 unmounts in 42 seconds. Average of 5 seconds per toolunmount.
+4 minutes 51 seconds spent selected. 0 seconds with active heater and 0 seconds with standby heater.
+------------
+```
 
 ## Installation Instructions
 ### Install with Moonraker Autoupdate Support
@@ -83,11 +112,9 @@ cp ./*.py ~/klipper/klippy/extras/
 Then restart Klipper to pick up the extensions.
 
 ## To do:
-* Add virtual tools select code.
 * Add selectable automatic calculation of active times based on previous times. Ex:
   * Mean Layer time Standby mode. - Save time at every layerchange and at toolchange set to mean time of last 3 layers *2 or at last layer *1.5 with a Maximum and a minimum time. Needs to be analyzed further.
   * Save the time it was in Standby last time and apply a fuzzfactor. Put tool in standby and heatup with presumption that next time will be aproximatley after the same time as last. +/- Fuzzfactor.
-* Save pressure avance per tool to be restored on toolchange. Also between virtual tools. Check Slicer output first if this is needed or can be put in Filament custom gcode.
 
 ## Configuration requirements
 * `[input_shaper]` needs to be used for input shaper to wordk.
@@ -95,9 +122,9 @@ Then restart Klipper to pick up the extensions.
 ## G-Code commands:
 * `TOOL_LOCK` - Lock command
 * `TOOL_UNLOCK` - Unlock command
-* `Tn` - T0, T1, T2, etc... A select command is created for each tool. 
+* `KTCC_Tn` - T0, T1, T2, etc... A select command is created for each tool. 
   * `R` - Calls SAVE_CURRENT_POSITION with the variable as a RESTORE_POSITION_TYPE. For example "T0 R1" will call "SAVE_CURRENT_POSITION RESTORE_POSITION_TYPE=1" before moving. Positioned is restored with "RESTORE_POSITION" from below.
-* `T_1` - Dropoff the current tool without picking up another tool
+* `KTCC_TOOL_DROPOFF_ALL` - Dropoff the current tool without picking up another tool
 * `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
   * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
   * `P` - Fan of this tool. Default current tool.
@@ -140,6 +167,15 @@ This command can be used without any additional parameters. Without parameters i
     * 0: No restore
     * 1: Restore XY
     * 2: Restore XYZ
+* `KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL` - 
+* `KTCC_LOG_TRACE` - 
+* `KTCC_LOG_DEBUG` - 
+* `KTCC_LOG_INFO` - 
+* `KTCC_LOG_ALWAYS` - 
+* `KTCC_SET_LOG_LEVEL` - 
+* `KTCC_DUMP_STATS` - 
+* `KTCC_RESET_STATS` - 
+
 ## Values accesible from Macro for each object
 - **Toollock**
   - `global_offset` - Global offset.
@@ -171,3 +207,33 @@ This command can be used without any additional parameters. Without parameters i
   - `is_virtual` - As above
   - `physical_parent_id` - As above
   - `lazy_home_when_parking` - As above
+
+
+Updates 22/02/2023
+This is not a simple upgrade, it has some configuration updates.
+A namechange to KTCC (Klipper Tool Changer Code) is also in the works).
+
+News:
+-Virtual Tools
+-Logfile
+-Statistics
+
+Changes to Configuration:
+LogLevel under ToolLock is deprecated.
+Must include new section ```[ktcclog]```.
+New ```virtual_toolload_gcode:`` parameter to tools.
+New ```virtual_toolunload_gcode:`` parameter to tools.
+
+Changes to commands:
+T_1 => KTCC_TOOL_DROPOFF_ALL
+T# => KTCC_T# (ex. T0 => KTCC_T0)
+
+New  commands:
+KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL
+KTCC_LOG_TRACE
+KTCC_LOG_DEBUG
+KTCC_LOG_INFO
+KTCC_LOG_ALWAYS
+KTCC_SET_LOG_LEVEL
+KTCC_DUMP_STATS
+KTCC_RESET_STATS
