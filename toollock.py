@@ -1,10 +1,12 @@
 # KTCC - Klipper Tool Changer Code
-
-# Toollock and general Tool support
+# Log and statistics module
 #
 # Copyright (C) 2023  Andrei Ignat <andrei@ignat.se>
 #
+# Based on and inspired by ERCF-Software-V3      Copyright (C) 2021  moggieuk#6538 (discord)
+#
 # This file may be distributed under the terms of the GNU GPLv3 license.
+#
 
 class ToolLock:
     TOOL_UNKNOWN = -2
