@@ -1,17 +1,18 @@
 # KTCC - Klipper Tool Changer Code
-#
-# Error handling based on Happy Hare rewrite of ERCF
+# Log and statistics module
 #
 # Copyright (C) 2023  Andrei Ignat <andrei@ignat.se>
 #
+# Based on and inspired by ERCF-Software-V3      Copyright (C) 2021  moggieuk#6538 (discord)
+#
 # This file may be distributed under the terms of the GNU GPLv3 license.
+#
 
-
-# To try to keep things apart:
+# To try to keep terms apart:
 # Mount: Tool is selected and loaded for use, be it a physical or a virtual on physical.
 # Unmopunt: Tool is unselected and unloaded, be it a physical or a virtual on physical.
-# Pickup: Tool is physically picked up.
-# Droppoff: Tool is physically parked.
+# Pickup: Tool is physically picked up and attached to the toolchanger head.
+# Droppoff: Tool is physically parked and dropped of the toolchanger head.
 # ToolLock: Toollock is engaged.
 # ToolUnLock: Toollock is disengaged.
 
@@ -343,7 +344,7 @@ class KtccLog:
         msg += "\n%d tool locks completed" % self.total_toollocks
         msg += "\n%d tool unlocks completed" % self.total_toolunlocks
         msg += "\n%d tool mounts completed" % self.total_toolmounts
-        msg += "\n%d tool dropoffs completed" % self.total_toolunmounts
+        msg += "\n%d tool unmounts completed" % self.total_toolunmounts
         return msg
 
     def _division(self, dividend, divisor):
