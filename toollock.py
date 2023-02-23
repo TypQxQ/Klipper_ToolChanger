@@ -1,10 +1,18 @@
 # KTCC - Klipper Tool Changer Code
-
-# Toollock and general Tool support
+# Main module
 #
 # Copyright (C) 2023  Andrei Ignat <andrei@ignat.se>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
+#
+
+# To try to keep terms apart:
+# Mount: Tool is selected and loaded for use, be it a physical or a virtual on physical.
+# Unmopunt: Tool is unselected and unloaded, be it a physical or a virtual on physical.
+# Pickup: Tool is physically picked up and attached to the toolchanger head.
+# Droppoff: Tool is physically parked and dropped of the toolchanger head.
+# ToolLock: Toollock is engaged.
+# ToolUnLock: Toollock is disengaged.
 
 class ToolLock:
     TOOL_UNKNOWN = -2
