@@ -223,7 +223,7 @@ A namechange to KTCC (Klipper Tool Changer Code) is also in the works).
 
 - **Changes to Configuration:**
   - LogLevel under ToolLock is deprecated.
-  - Must include new section ```[ktcclog]```.
+  - Must include new section ```[ktcclog]``` before all other Toollock, tool, and the others..
   - New ```virtual_toolload_gcode:`` parameter to tools.
   - New ```virtual_toolunload_gcode:`` parameter to tools.
 
