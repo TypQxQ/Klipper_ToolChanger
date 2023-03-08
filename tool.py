@@ -4,7 +4,6 @@
 # Copyright (C) 2023  Andrei Ignat <andrei@ignat.se>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-#
 
 # To try to keep terms apart:
 # Mount: Tool is selected and loaded for use, be it a physical or a virtual on physical.
@@ -14,7 +13,11 @@
 # ToolLock: Toollock is engaged.
 # ToolUnLock: Toollock is disengaged.
 
-import logging
+# KTCC exception error class
+class KTCCError(Exception):
+    pass
+
+# Each tool is getting an instance of this.
 class Tool:
     TOOL_UNKNOWN = -2
     TOOL_UNLOCKED = -1
@@ -289,8 +292,8 @@ class Tool:
             context['myself'] = self.get_status()
             context['toollock'] = self.toollock.get_status()
             self.pickup_gcode_template.run_gcode_from_command(context)
-        except Exception:
-            logging.exception("Pickup gcode: Script running error")
+        except KTCCError as ee:
+            raise KTCCError("Pickup gcode: Script running error: %s" % (str(ee)))
 
         # Restore fan if has a fan.
         if self.fan is not None:
@@ -344,8 +347,8 @@ class Tool:
             context['myself'] = self.get_status()
             context['toollock'] = self.toollock.get_status()
             self.dropoff_gcode_template.run_gcode_from_command(context)
-        except Exception:
-            logging.exception("Dropoff gcode: Script running error")
+        except KTCCError as ee:
+            raise KTCCError("Dropoff gcode: Script running error: %s" % (str(ee)))
 
         self.toollock.SaveCurrentTool(self.TOOL_UNLOCKED)   # Dropoff successfull
         self.log.track_unmount_end(self.name)                 # Log the time it takes for tool change.
@@ -360,8 +363,8 @@ class Tool:
             context['myself'] = self.get_status()
             context['toollock'] = self.toollock.get_status()
             self.virtual_toolload_gcode_template.run_gcode_from_command(context)
-        except Exception:
-            logging.exception("virtual_toolload_gcode: Script running error")
+        except KTCCError as ee:
+            raise KTCCError("virtual_toolload_gcode: Script running error: %s" % (str(ee)))
 
         # Save current picked up tool and print on screen.
         self.toollock.SaveCurrentTool(self.name)
@@ -376,8 +379,8 @@ class Tool:
             context['myself'] = self.get_status()
             context['toollock'] = self.toollock.get_status()
             self.virtual_toolunload_gcode_template.run_gcode_from_command(context)
-        except Exception:
-            logging.exception("virtual_toolunload_gcode: Script running error")
+        except KTCCError as ee:
+            raise KTCCError("virtual_toolunload_gcode: Script running error:\n%s" % str(ee))
 
         # Save current picked up tool and print on screen.
         self.toollock.SaveCurrentTool(self.name)
@@ -512,9 +515,10 @@ class ToolStandbyTempTimer:
     def _handle_ready(self):
         self.timer_handler = self.reactor.register_timer(
             self._standby_tool_temp_timer_event, self.reactor.NEVER)
+
     def _standby_tool_temp_timer_event(self, eventtime):
         self.inside_timer = True
-        self.log.trace("_standby_tool_temp_timer_event: Running for T" + str(self.tool_id) + ". temp_type:" + str(self.temp_type))
+        self.log.trace("_standby_tool_temp_timer_event: Running for T%s. temp_type:%s." % (str(self.tool_id), "Time to shutdown" if self.temp_type == 0 else "Time to standby"))
         try:
             tool = self.printer.lookup_object("tool " + str(self.tool_id))
             temperature = 0
@@ -526,16 +530,18 @@ class ToolStandbyTempTimer:
                 self.log.track_active_heater_end(self.tool_id)                                                 # Set the active as finishes in statistics.
             heater = self.printer.lookup_object(tool.extruder).get_heater()
             heater.set_temp(temperature)
+            self.log.trace("_standby_tool_temp_timer_event: Running heater.set_temp(%s)" % str(temperature))
             self.log.track_active_heater_end(self.tool_id)                                               # Set the active as finishes in statistics.
 
-        except Exception as e:
-            self.log.debug("Failed to set Standby temp for tool T%s: %s" % (str(self.tool_id), str(e)))
-            logging.exception("Failed to set Standby temp for tool T" + str(self.tool_id) + ".")
+        except KTCCError as ee:
+            raise KTCCError("Failed to set Standby temp for tool T%s: %s" % (str(self.tool_id), str(ee)))
+
         nextwake = self.reactor.NEVER
         if self.repeat:
             nextwake = eventtime + self.duration
         self.inside_timer = self.repeat = False
         return nextwake
+
     def set_timer(self, duration):
         self.log.trace(str(self.timer_handler) + ".set_timer: T" + str(self.tool_id) + "; temp_type:" + str(self.temp_type) + "; duration:" + str(duration) + ".")
         self.duration = float(duration)
@@ -546,6 +552,7 @@ class ToolStandbyTempTimer:
             if self.duration:
                 waketime = self.reactor.monotonic() + self.duration
             self.reactor.update_timer(self.timer_handler, waketime)
+
     def get_status(self, eventtime= None):
         status = {
             "tool": self.tool,

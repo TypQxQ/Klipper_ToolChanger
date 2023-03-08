@@ -17,7 +17,7 @@
 # ToolUnLock: Toollock is disengaged.
 
 import logging, logging.handlers, threading, queue, time
-import math, os.path
+import math, os.path, copy
 
 # Forward all messages through a queue (polled by background thread)
 class KtccQueueHandler(logging.Handler):
@@ -66,8 +66,7 @@ class KtccLog:
     TOOL_UNKNOWN = -2
     TOOL_UNLOCKED = -1
     EMPTY_TOOL_STATS = {'toolmounts_completed': 0, 'toolunmounts_completed': 0, 'toolmounts_started': 0, 'toolunmounts_started': 0, 'time_selected': 0, 'time_heater_active': 0, 'time_heater_standby': 0, 'tracked_start_time_selected':0, 'tracked_start_time_active':0, 'tracked_start_time_standby':0, 'total_time_spent_unmounting':0, 'total_time_spent_mounting':0}
-
-    VARS_KTCC_TOOL_STATISTICS_PREFIX = "ktcc_statistics_tool"
+    KTCC_TOOL_STATISTICS_PREFIX = "ktcc_statistics_tool"
 
     def __init__(self, config):
         self.config = config
@@ -92,21 +91,42 @@ class KtccLog:
         # Save to file
         self.changes_to_save = False
         self.save_delay = 10
+        self.save_active = True
 
         # Register commands
         handlers = [
             'KTCC_LOG_TRACE', 'KTCC_LOG_DEBUG', 'KTCC_LOG_INFO', 'KTCC_LOG_ALWAYS', 
-            'KTCC_SET_LOG_LEVEL', 'KTCC_DUMP_STATS', 'KTCC_RESET_STATS']
+            'KTCC_SET_LOG_LEVEL', 'KTCC_DUMP_STATS', 'KTCC_RESET_STATS',
+            'KTCC_INIT_PRINT_STATS', 'KTCC_DUMP_PRINT_STATS']
         for cmd in handlers:
             func = getattr(self, 'cmd_' + cmd)
             desc = getattr(self, 'cmd_' + cmd + '_help', None)
             self.gcode.register_command(cmd, func, False, desc)
 
+    def handle_ready(self):
+        self.always('KlipperToolChangerCode Ready')
+
+        # Wraping G28 and wait for temperature so we don't try sending gcode commands to save state while the gcode is blocked.
+        # Need to do it outermost so that any G28 macros are used too.
+        # When inside a G28 the parser won't run any SAVE_VARIABLE resulting in Klipper 
+        try:
+            self.prev_G28 = self.gcode.register_command("G28", None)
+            self.gcode.register_command("G28", self.cmd_KTCC_G28, desc = self.cmd_KTCC_G28_help)
+        except Exception as e:
+            logging.exception('KTCC Warning: Error trying to wrap G28 macro: %s' % str(e))
+
+    cmd_KTCC_G28_help = "Homing axes."
+    def cmd_KTCC_G28(self, gcmd):
+        self.save_active = False                    # Don't try to use SAVE_VARIABLE commands.
+        self.prev_G28(gcmd)
+        self.save_active = True                     # Resume to use SAVE_VARIABLE commands.
+
     def _save_changes_timer_event(self, eventtime):
         try:
-            if self.changes_to_save:
+            if self.save_active and self.changes_to_save:
                 self.changes_to_save = False
                 self.trace("Saving state in logs.")
+
                 self._persist_swap_statistics()
                 self._persist_tool_statistics()
         except Exception as e:
@@ -138,9 +158,18 @@ class KtccLog:
         # Load saved values
         self._load_persisted_state()
 
+        # Init persihabele statistics
+        self._reset_print_statistics()
+
         # Set up timer to save values when needed
         self.timer_save = self.reactor.register_timer(
             self._save_changes_timer_event, self.reactor.monotonic() + (self.save_delay))
+
+    def handle_disconnect(self):
+        self.always('KTCC Shutdown')
+        self.reactor.update_timer(self.timer_save, self.reactor.NEVER)
+        if self.queue_listener != None:
+            self.queue_listener.stop()
 
     def _load_persisted_state(self):
         swap_stats = self.variables.get("ktcc_statistics_swaps", {})
@@ -164,7 +193,7 @@ class KtccLog:
             try:
                 toolname=str(tool[0])
                 toolname=toolname[toolname.rindex(' ')+1:]
-                self.tool_statistics[toolname] = self.variables.get("%s%s" % (self.VARS_KTCC_TOOL_STATISTICS_PREFIX, toolname), self.EMPTY_TOOL_STATS.copy())
+                self.tool_statistics[toolname] = self.variables.get("%s%s" % (self.KTCC_TOOL_STATISTICS_PREFIX, toolname), self.EMPTY_TOOL_STATS.copy())
                 self.tool_statistics[toolname]["tracked_start_time_selected"] = 0
                 self.tool_statistics[toolname]["tracked_start_time_active"] = 0
                 self.tool_statistics[toolname]["tracked_start_time_standby"] = 0
@@ -174,13 +203,15 @@ class KtccLog:
             except Exception as err:
                 self.debug("Unexpected error in toolstast: %s" % err)
 
-    def handle_disconnect(self):
-        self.always('KTCC Shutdown')
-        if self.queue_listener != None:
-            self.queue_listener.stop()
-
-    def handle_ready(self):
-        self.always('KlipperToolChangerCode Ready')
+    def _reset_print_statistics(self):
+        # Init persihabele statistics
+        self.print_time_spent_mounting = self.total_time_spent_mounting
+        self.print_time_spent_unmounting = self.total_time_spent_unmounting
+        self.print_toollocks = self.total_toollocks
+        self.print_toolunlocks = self.total_toolunlocks
+        self.print_toolmounts = self.total_toolmounts
+        self.print_toolunmounts = self.total_toolunmounts
+        self.print_tool_statistics = copy.deepcopy(self.tool_statistics)
 
 ####################################
 # LOGGING FUNCTIONS                #
@@ -347,6 +378,17 @@ class KtccLog:
         msg += "\n%d tool unmounts completed" % self.total_toolunmounts
         return msg
 
+    def _swap_print_statistics_to_human_string(self):
+        msg = "KTCC Statistics for this print:"
+        # msg += "\n%d swaps completed" % self.total_mounts
+        msg += "\n%s spent mounting tools" % self._seconds_to_human_string(self.total_time_spent_mounting-self.print_time_spent_mounting)
+        msg += "\n%s spent unmounting tools" % self._seconds_to_human_string(self.total_time_spent_unmounting-self.print_time_spent_unmounting)
+        msg += "\n%d tool locks completed" % (self.total_toollocks-self.print_toollocks)
+        msg += "\n%d tool unlocks completed" % (self.total_toolunlocks-self.print_toolunlocks)
+        msg += "\n%d tool mounts completed" % (self.total_toolmounts-self.print_toolmounts)
+        msg += "\n%d tool unmounts completed" % (self.total_toolunmounts-self.print_toolunmounts)
+        return msg
+
     def _division(self, dividend, divisor):
         try:
             return dividend/divisor
@@ -371,6 +413,26 @@ class KtccLog:
 
         self.always(msg)
 
+    def _dump_print_statistics(self, report=False):
+        if self.log_statistics or report:
+            msg = "ToolChanger Statistics for this print:\n"
+            msg += self._swap_print_statistics_to_human_string()
+            msg += "\n------------\n"
+
+            msg += "Tool Statistics for this print:\n"
+            for tool_id in self.tool_statistics:
+                # self.trace(str(tool))
+                ts = self.tool_statistics[tool_id]
+                pts = self.print_tool_statistics[tool_id]
+                msg += "Tool#%s:\n" % (tool_id)
+                msg += "Completed %d out of %d mounts in %s. Average of %s per toolmount.\n" % ((ts['toolmounts_completed']-pts['toolmounts_completed']), (ts['toolmounts_started']-pts['toolmounts_started']), self._seconds_to_human_string(ts['total_time_spent_mounting']-pts['total_time_spent_mounting']), self._seconds_to_human_string(self._division((ts['total_time_spent_mounting']-pts['total_time_spent_mounting']), (ts['toolmounts_completed']-ts['toolmounts_completed']))))
+                msg += "Completed %d out of %d unmounts in %s. Average of %s per toolunmount.\n" % (ts['toolunmounts_completed']-pts['toolunmounts_completed'], ts['toolunmounts_started']-pts['toolunmounts_started'], self._seconds_to_human_string(ts['total_time_spent_unmounting']-pts['total_time_spent_unmounting']), self._seconds_to_human_string(self._division(ts['total_time_spent_unmounting']-pts['total_time_spent_unmounting'], ts['toolunmounts_completed']-pts['toolunmounts_completed'])))
+                msg += "%s spent selected. %s with active heater and %s with standby heater.\n" % (self._seconds_to_human_string(ts['time_selected']-pts['time_selected']), self._seconds_to_human_string(ts['time_heater_active']-pts['time_heater_active']), self._seconds_to_human_string(ts['time_heater_standby']-pts['time_heater_standby']))
+                msg += "------------\n"
+        self.always(msg)
+
+
+
     def _persist_swap_statistics(self):
         swap_stats = {
             # 'total_mounts': self.total_mounts,
@@ -386,7 +448,7 @@ class KtccLog:
     def _persist_tool_statistics(self):
         for tool in self.tool_statistics:
             try:
-                self.gcode.run_script_from_command("SAVE_VARIABLE VARIABLE=%s%s VALUE=\"%s\"" % (self.VARS_KTCC_TOOL_STATISTICS_PREFIX, tool, self.tool_statistics[tool]))
+                self.gcode.run_script_from_command("SAVE_VARIABLE VARIABLE=%s%s VALUE=\"%s\"" % (self.KTCC_TOOL_STATISTICS_PREFIX, tool, self.tool_statistics[tool]))
             except Exception as err:
                 self.debug("Unexpected error in _persist_tool_statistics: %s" % err)
 
@@ -455,6 +517,14 @@ class KtccLog:
     def cmd_KTCC_DUMP_STATS(self, gcmd):
         self._dump_statistics(True)
 
+    cmd_KTCC_INIT_PRINT_STATS_help = "Run at start of a print to initialize the KTCC print statistics"
+    def cmd_KTCC_INIT_PRINT_STATS(self, gcmd):
+        self._reset_print_statistics()
+
+    cmd_KTCC_DUMP_PRINT_STATS_help = "Dump the KTCC statistics"
+    def cmd_KTCC_DUMP_PRINT_STATS(self, gcmd):
+        self._dump_print_statistics(True)
+
     cmd_KTCC_SET_LOG_LEVEL_help = "Set the log level for the KTCC"
     def cmd_KTCC_SET_LOG_LEVEL(self, gcmd):
         self.log_level = gcmd.get_int('LEVEL', self.log_level, minval=0, maxval=4)
@@ -481,6 +551,27 @@ class KtccLog:
     def cmd_KTCC_LOG_TRACE(self, gcmd):
         msg = gcmd.get('MSG')
         self.trace(msg)
+
+    # def _get_print_status(self):
+    #     try:
+    #         # If using virtual sdcard this is the most reliable method
+    #         source = "print_stats"
+    #         print_status = self.printer.lookup_object("print_stats").get_status(self.printer.get_reactor().monotonic())['state']
+    #     except:
+    #         # Otherwise we fallback to idle_timeout
+    #         source = "idle_timeout"
+    #         if self.printer.lookup_object("pause_resume").is_paused:
+    #             print_status = "paused"
+    #         else:
+    #             idle_timeout = self.printer.lookup_object("idle_timeout").get_status(self.printer.get_reactor().monotonic())
+    #             if idle_timeout["printing_time"] < 1.0:
+    #                 print_status = "standby"
+    #             else:
+    #                 print_status = idle_timeout['state'].lower()
+    #     finally:
+    #         self.trace("Determined print status as: %s from %s" % (print_status, source))
+    #         return print_status
+
 
     # cmd_KTCC_STATUS_help = "Complete dump of current KTCC state and important configuration"
     # def cmd_KTCC_STATUS(self, gcmd):
