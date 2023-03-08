@@ -48,7 +48,7 @@ parameter to specify another tool.
 * Position prior to toolchange can optionaly be saved and restored.
 * Logging including to file functionality. You can keep the console log to a minimum and send debugging information to `ktcc.log` located in the same directory as Klipper logs.
 * Logging including to file functionality. You can keep the console log to a minimum and send debugging information to `ktcc.log` located in the same directory as Klipper logs.
-# Statistics that look like this:
+# Statistics per print and persistent that look like this:
 ```
 ToolChanger Statistics:
 KTCC Statistics:
@@ -168,13 +168,22 @@ This command can be used without any additional parameters. Without parameters i
     * 1: Restore XY
     * 2: Restore XYZ
 * `KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL` - 
-* `KTCC_LOG_TRACE` - 
-* `KTCC_LOG_DEBUG` - 
-* `KTCC_LOG_INFO` - 
-* `KTCC_LOG_ALWAYS` - 
-* `KTCC_SET_LOG_LEVEL` - 
-* `KTCC_DUMP_STATS` - 
-* `KTCC_RESET_STATS` - 
+* `KTCC_LOG_TRACE` - Send a message to log at this logging level.
+  * MSG= The message to be sent.
+* `KTCC_LOG_DEBUG` - As above for this level.
+* `KTCC_LOG_INFO` - As above for this level.
+* `KTCC_LOG_ALWAYS` - As above for this level.
+* `KTCC_SET_LOG_LEVEL` - Set the log level for the KTCC
+  * LEVEL= Level of logging to print on screen
+    * 0: Only the Always messages
+    * 1: Info messages and above
+    * 2: Debug messages and above
+    * 3: Trace messages and above
+  * LOGFILE= Level of logging to save to file, KTCC.log in same directory as other logs.
+* `KTCC_DUMP_STATS` - Dump the KTCC statistics
+* `KTCC_RESET_STATS` - Resets all saved statistics, you may regret this.
+* `KTCC_INIT_PRINT_STATS` - Run at start of a print to reset the KTCC print statistics.
+* `KTCC_DUMP_PRINT_STATS` - Run at end of a print to list statistics since last print reset.
 
 ## Values accesible from Macro for each object
 - **Toollock**
@@ -211,6 +220,12 @@ This command can be used without any additional parameters. Without parameters i
 ## Example configuration
 My full and updated configuration file backup can be found here:
 https://github.com/TypQxQ/DuetBackup/tree/main/qTC-Klipper
+
+## Updates 08/03/2023
+Added per print statistics and a wrapper around G28 to disable saving statistics while homing.
+The latter led to MCU Timer to close error when loading a tool at homing.
+* `KTCC_INIT_PRINT_STATS` - Run at start of a print to reset the KTCC print statistics.
+* `KTCC_DUMP_PRINT_STATS` - Run at end of a print to list statistics since last print reset.
 
 ## Updates 22/02/2023
 This is not a simple upgrade, it has some configuration updates.

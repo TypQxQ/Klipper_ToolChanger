@@ -1,5 +1,5 @@
 # KTCC - Klipper Tool Changer Code
-# Main module
+# Toollock and general Tool support
 #
 # Copyright (C) 2023  Andrei Ignat <andrei@ignat.se>
 #
@@ -52,20 +52,6 @@ class ToolLock:
             self.gcode.register_command(cmd, func, False, desc)
 
         self.printer.register_event_handler("klippy:ready", self.Initialize_Tool_Lock)
-
-    def setup_tools(self, config, gcode_id=None):
-        heater_name = config.get_name().split()[-1]
-        if heater_name in self.heaters:
-            raise config.error("Heater %s already registered" % (heater_name,))
-        # Setup sensor
-        sensor = self.setup_sensor(config)
-        # Create heater
-        self.heaters[heater_name] = heater = Heater(config, sensor)
-        self.register_sensor(config, heater, gcode_id)
-        self.available_heaters.append(config.get_name())
-        return heater
-    def get_all_heaters(self):
-        return self.available_heaters
 
     cmd_TOOL_LOCK_help = "Lock the ToolLock."
     def cmd_TOOL_LOCK(self, gcmd = None):
@@ -463,7 +449,6 @@ class ToolLock:
             current_tool = self.printer.lookup_object('tool ' + str(current_tool_id))
             self.log.trace("SET_GCODE_OFFSET X=%s Y=%s Z=%s MOVE=%s" % (str(current_tool.offset[0]), str(current_tool.offset[1]), str(current_tool.offset[2]), str(param_Move)))
             self.gcode.run_script_from_command("SET_GCODE_OFFSET X=%s Y=%s Z=%s MOVE=%s" % (str(current_tool.offset[0]), str(current_tool.offset[1]), str(current_tool.offset[2]), str(param_Move)))
-    
 
 def load_config(config):
     return ToolLock(config)
