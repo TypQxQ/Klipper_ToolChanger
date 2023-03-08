@@ -281,6 +281,22 @@ class KtccLog:
         self.total_toolmounts = 0
         self.total_toolunmounts = 0
 
+        self.tool_statistics = {}
+        for tool in self.printer.lookup_objects('tool'):
+            try:
+                toolname=str(tool[0])
+                toolname=toolname[toolname.rindex(' ')+1:]
+                self.tool_statistics[toolname] = self.EMPTY_TOOL_STATS.copy()
+                self.tool_statistics[toolname]["tracked_start_time_selected"] = 0
+                self.tool_statistics[toolname]["tracked_start_time_active"] = 0
+                self.tool_statistics[toolname]["tracked_start_time_standby"] = 0
+                self.tool_statistics[toolname]["tracked_unmount_start_time"] = 0
+                self.tool_statistics[toolname]["tracked_mount_start_time"] = 0
+
+            except Exception as err:
+                self.debug("Unexpected error in toolstast: %s" % err)
+
+
     def track_mount_start(self, tool_id):
         self.trace("track_mount_start: Running for Tool: %s." % (tool_id))
         self._set_tool_statistics(tool_id, 'tracked_mount_start_time', time.time())
@@ -509,9 +525,8 @@ class KtccLog:
     cmd_KTCC_RESET_STATS_help = "Reset the KTCC statistics"
     def cmd_KTCC_RESET_STATS(self, gcmd):
         self._reset_statistics()
-        self._dump_statistics(True)
         self.changes_to_save = True
-        # self._persist_swap_statistics()
+        self._dump_statistics(True)
 
     cmd_KTCC_DUMP_STATS_help = "Dump the KTCC statistics"
     def cmd_KTCC_DUMP_STATS(self, gcmd):
@@ -521,7 +536,7 @@ class KtccLog:
     def cmd_KTCC_INIT_PRINT_STATS(self, gcmd):
         self._reset_print_statistics()
 
-    cmd_KTCC_DUMP_PRINT_STATS_help = "Dump the KTCC statistics"
+    cmd_KTCC_DUMP_PRINT_STATS_help = "Run at end of a print to list statistics since last print reset."
     def cmd_KTCC_DUMP_PRINT_STATS(self, gcmd):
         self._dump_print_statistics(True)
 
