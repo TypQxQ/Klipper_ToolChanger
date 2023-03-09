@@ -50,7 +50,7 @@ class ToolLock:
             'SET_TOOL_TEMPERATURE', 'SET_GLOBAL_OFFSET', 'SET_TOOL_OFFSET',
             'SET_PURGE_ON_TOOLCHANGE', 'SAVE_POSITION', 'SAVE_CURRENT_POSITION', 
             'RESTORE_POSITION', 'KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL',
-            'KTCC_DISPLAY_TOOL_MAP', 'KTCC_REMAP_TOOL', 'KTCC_CHECK_TOOL_REMAP']
+            'KTCC_DISPLAY_TOOL_MAP', 'KTCC_REMAP_TOOL']
         for cmd in handlers:
             func = getattr(self, 'cmd_' + cmd)
             desc = getattr(self, 'cmd_' + cmd + '_help', None)
@@ -535,7 +535,6 @@ class ToolLock:
         self.log.debug("Resetting Tool map")
         self.tool_map = {}
         self.gcode.run_script_from_command("SAVE_VARIABLE VARIABLE=%s VALUE='%s'" % (self.VARS_KTCC_TOOL_MAP, self.tool_map))
-        self._unselect_tool()
 
 ### GCODE COMMANDS FOR TOOL REMAP LOGIC ##################################
 
