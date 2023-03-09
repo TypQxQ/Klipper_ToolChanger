@@ -4,8 +4,7 @@ Start G-code:
  - I don't heat the tools before actually using them so I don't degrade filament.
  - Using e3d Revo the heatup times for the tools are verry fast.
 ```
-M566 X300	; Jerk for first layer. (Only X is read)
-M204 P4000	; Acceleration Print. (Travel acceleration is not used in Klipper)
+KTCC_INIT_PRINT_STATS
 
 ; Don't heat the tools yet. (Using G10 so SuperSlicer and PrusaSlicer recognizes we set a tool temperature)
 G10 P0 R0 S0 A0	; Don't heat the tools yet. (Using G10 so SuperSlicer and PrusaSlicer recognizes we set a tool temperature)
@@ -43,15 +42,15 @@ G91 		; relative moves
 G0 Z20  		; move bed down another 30mm
 G90 		; absolute moves
 G0 X1 Y1 F30000	; Move toolhead out of the way
-SAVE_POSITION
+SAVE_POSITION         ; Reset saved position.
+KTCC_DUMP_PRINT_STATS ; Print statistics to console.
 ```
 
 ToolChange G-code
   - Sets the temperature before activating the tool in case this is the first time the tool is selected.
   - On first layer it sets the temperature for the next tool to first layer temperature.
 ```
-{if layer_num < 2}M568 P[next_extruder] R{filament_toolchange_temp[next_extruder]} S{first_layer_temperature[next_extruder]+extruder_temperature_offset[next_extruder]} A2 ;First layer temperature
-{else}M568 P[next_extruder] R{filament_toolchange_temp[next_extruder]} S{temperature[next_extruder]+extruder_temperature_offset[next_extruder]} A2 ;Other layer temperature
+{if layer_num < 2}M568 P[next_extruder] R{filament_toolchange_temp[next_extruder]} S{first_layer_temperature[next_extruder]+extruder_temperature_offset[next_extruder]} A2 ;First layer temperature for next extruder
+{else}M568 P[next_extruder] R{filament_toolchange_temp[next_extruder]} S{temperature[next_extruder]+extruder_temperature_offset[next_extruder]} A2 ;Other layer temperature for next extruder
 {endif}
-T{next_extruder}
-```
+T{next_extruder}```
