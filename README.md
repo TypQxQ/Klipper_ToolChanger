@@ -184,6 +184,13 @@ This command can be used without any additional parameters. Without parameters i
 * `KTCC_RESET_STATS` - Resets all saved statistics, you may regret this.
 * `KTCC_INIT_PRINT_STATS` - Run at start of a print to reset the KTCC print statistics.
 * `KTCC_DUMP_PRINT_STATS` - Run at end of a print to list statistics since last print reset.
+* `KTCC_DISPLAY_TOOL_MAP` - Display the current mapping of tools to other KTCC tools.
+* `KTCC_REMAP_TOOL` - The command to remap a tool or reset the remaping. 'KTCC_REMAP_TOOL TOOL=0 SET=5' will remap KTCC_T0 to KTCC_T5. State is saved and reloaded after restart.
+  * RESET= 1
+    * 0: Default, do not reset.
+    * 1: Reset all remaps.
+  * TOOL= The toolnumber you want to remap
+  * SET= The toolnumber you want to remap to.
 
 ## Values accesible from Macro for each object
 - **Toollock**
@@ -220,6 +227,13 @@ This command can be used without any additional parameters. Without parameters i
 ## Example configuration
 My full and updated configuration file backup can be found here:
 https://github.com/TypQxQ/DuetBackup/tree/main/qTC-Klipper
+
+## Updates 09/03/2023
+Added Tool Remap. Point one or more tools to another one. Including fan and temperature. This is persistent at reboot.
+* `KTCC_DISPLAY_TOOL_MAP` - Display the current mapping of tools to other KTCC tools.
+* `KTCC_REMAP_TOOL` - The command to remap a tool or reset the remaping.
+* `KTCC_CHECK_TOOL_REMAP` - Display all tool remaps.
+
 
 ## Updates 08/03/2023
 Added per print statistics and a wrapper around G28 to disable saving statistics while homing.
