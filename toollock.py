@@ -17,11 +17,12 @@
 class ToolLock:
     TOOL_UNKNOWN = -2
     TOOL_UNLOCKED = -1
+    VARS_KTCC_TOOL_MAP = "ktcc_state_tool_remap"
 
     def __init__(self, config):
         self.printer = config.get_printer()
         self.reactor = self.printer.get_reactor()
-        self.gcode = config.get_printer().lookup_object('gcode')
+        self.gcode = self.printer.lookup_object('gcode')
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
 
         self.global_offset = [0, 0, 0]    # Global offset to apply to all tools
@@ -35,6 +36,8 @@ class ToolLock:
         self.restore_position_on_toolchange_type = 0   # 0: Don't restore; 1: Restore XY; 2: Restore XYZ
         self.log = self.printer.load_object(config, 'ktcclog')
 
+        self.tool_map = {}
+
         # G-Code macros
         self.tool_lock_gcode_template = gcode_macro.load_template(config, 'tool_lock_gcode', '')
         self.tool_unlock_gcode_template = gcode_macro.load_template(config, 'tool_unlock_gcode', '')
@@ -45,7 +48,8 @@ class ToolLock:
             'KTCC_TOOL_DROPOFF_ALL', 'SET_AND_SAVE_FAN_SPEED', 'TEMPERATURE_WAIT_WITH_TOLERANCE', 
             'SET_TOOL_TEMPERATURE', 'SET_GLOBAL_OFFSET', 'SET_TOOL_OFFSET',
             'SET_PURGE_ON_TOOLCHANGE', 'SAVE_POSITION', 'SAVE_CURRENT_POSITION', 
-            'RESTORE_POSITION', 'KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL']
+            'RESTORE_POSITION', 'KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL',
+            'KTCC_DISPLAY_TOOL_MAP', 'KTCC_REMAP_TOOL', 'KTCC_CHECK_TOOL_REMAP']
         for cmd in handlers:
             func = getattr(self, 'cmd_' + cmd)
             desc = getattr(self, 'cmd_' + cmd + '_help', None)
@@ -115,6 +119,11 @@ class ToolLock:
             self.SaveCurrentTool(t)
 
     def Initialize_Tool_Lock(self):
+        # Load persistent Tool remaping.
+        self.tool_map = self.printer.lookup_object('save_variables').allVariables.get(self.VARS_KTCC_TOOL_MAP, {})
+        if len(self.tool_map) > 0:
+            self.log.always(self._tool_map_to_human_string())
+
         if not self.init_printer_to_last_tool:
             return None
 
@@ -161,6 +170,12 @@ class ToolLock:
     # Can change fan scale for diffrent materials or tools from slicer. Maybe max and min too?
     #    
     def SetAndSaveFanSpeed(self, tool_id, fanspeed):
+        # Check if the requested tool has been remaped to another one.
+        tool_is_remaped = self.tool_is_remaped(int(tool_id))
+        if tool_is_remaped > -1:
+            tool_id = tool_is_remaped
+
+
         tool = self.printer.lookup_object("tool " + str(tool_id))
 
         if tool.fan is None:
@@ -200,6 +215,11 @@ class ToolLock:
 
         else:                                               # Only heater or tool is specified
             if tool_id is not None:
+                # Check if the requested tool has been remaped to another one.
+                tool_is_remaped = self.tool_is_remaped(int(tool_id))
+                if tool_is_remaped > -1:
+                    tool_id = tool_is_remaped
+
                 heater_name = self.printer.lookup_object(   # Set the heater_name to the extruder of the tool.
                     "tool " + str(tool_id)).get_status(curtime)["extruder"]
             elif heater_id == 0:                            # Else If 0, then heater_bed.
@@ -226,6 +246,21 @@ class ToolLock:
                 " MAXIMUM=" + str(target_temp + tolerance) )
             self.log.always("Wait for heater " + heater_name + " complete.")
 
+    def _get_tool_id_from_gcmd(self, gcmd):
+        tool_id = gcmd.get_int('TOOL', None, minval=0)
+
+        if tool_id is None:
+            tool_id = self.tool_current
+        elif int(tool_id) < 0:
+            self.log.always("_get_tool_id_from_gcmd: Tool " + str(tool_id) + " is not valid.")
+            return None
+        else:
+            # Check if the requested tool has been remaped to another one.
+            tool_is_remaped = self.tool_is_remaped(int(tool_id))
+            if tool_is_remaped > -1:
+                tool_id = tool_is_remaped
+        return tool_id
+
 
     cmd_SET_TOOL_TEMPERATURE_help = "Waits for all temperatures, or a specified (TOOL) tool or (HEATER) heater's temperature within (TOLERANCE) tolerance."
 #  Set tool temperature.
@@ -238,17 +273,17 @@ class ToolLock:
 #  SHTDWN_TIMEOUT = Time in seconds to wait from docking tool to shutting off the heater, optional.
 #      Use for example 86400 to wait 24h if you want to disable shutdown timer.
     def cmd_SET_TOOL_TEMPERATURE(self, gcmd):
-        curtime = self.printer.get_reactor().monotonic()
-        tool_id = gcmd.get_int('TOOL', self.tool_current, minval=0)
+        # curtime = self.printer.get_reactor().monotonic()
+
+        tool_id = self._get_tool_id_from_gcmd(gcmd)
+        if tool_id is None: return
+
         stdb_tmp = gcmd.get_float('STDB_TMP', None, minval=0)
         actv_tmp = gcmd.get_float('ACTV_TMP', None, minval=0)
         chng_state = gcmd.get_int('CHNG_STATE', None, minval=0, maxval=2)
         stdb_timeout = gcmd.get_float('STDB_TIMEOUT', None, minval=0)
         shtdwn_timeout = gcmd.get_float('SHTDWN_TIMEOUT', None, minval=0)
 
-        if int(tool_id) < 0:
-            self.log.always("cmd_SET_TOOL_TEMPERATURE: Tool " + str(tool_id) + " is not valid.")
-            return None
 
         if self.printer.lookup_object("tool " + str(tool_id)).get_status()["extruder"] is None:
             self.log.trace("cmd_SET_TOOL_TEMPERATURE: T%s has no extruder! Nothing to do." % str(tool_id))
@@ -272,17 +307,15 @@ class ToolLock:
 
     cmd_SET_TOOL_OFFSET_help = "Set an individual tool offset"
     def cmd_SET_TOOL_OFFSET(self, gcmd):
-        tool_id = gcmd.get_int('TOOL', self.tool_current, minval=0)
+        tool_id = self._get_tool_id_from_gcmd(gcmd)
+        if tool_id is None: return
+
         x_pos = gcmd.get_float('X', None)
         x_adjust = gcmd.get_float('X_ADJUST', None)
         y_pos = gcmd.get_float('Y', None)
         y_adjust = gcmd.get_float('Y_ADJUST', None)
         z_pos = gcmd.get_float('Z', None)
         z_adjust = gcmd.get_float('Z_ADJUST', None)
-
-        if tool_id < 0:
-            self.log.always("cmd_SET_TOOL_TEMPERATURE: Tool " + str(tool_id) + " is not valid.")
-            return None
 
         tool = self.printer.lookup_object("tool " + str(tool_id))
         set_offset_cmd = {}
@@ -449,6 +482,81 @@ class ToolLock:
             current_tool = self.printer.lookup_object('tool ' + str(current_tool_id))
             self.log.trace("SET_GCODE_OFFSET X=%s Y=%s Z=%s MOVE=%s" % (str(current_tool.offset[0]), str(current_tool.offset[1]), str(current_tool.offset[2]), str(param_Move)))
             self.gcode.run_script_from_command("SET_GCODE_OFFSET X=%s Y=%s Z=%s MOVE=%s" % (str(current_tool.offset[0]), str(current_tool.offset[1]), str(current_tool.offset[2]), str(param_Move)))
+
+
+###########################################
+# TOOL REMAPING                           #
+###########################################
+
+    def _set_tool_to_tool(self, from_tool, to_tool):
+        #Check first if to_tool is a valid tool.
+        tools = self.printer.lookup_objects('tool')
+        if not [item for item in tools if item[0] == ("tool " + str(to_tool))]:
+            self.log.always("Tool %s not a valid tool" % str(to_tool))
+            return False
+
+        # Set the new tool.
+        self.tool_map[from_tool] = to_tool
+        self.gcode.run_script_from_command("SAVE_VARIABLE VARIABLE=%s VALUE='%s'" % (self.VARS_KTCC_TOOL_MAP, self.tool_map))
+
+    # def _set_tool_status(self, tool, state):
+        # self.gate_status[tool] = state
+        # self.gcode.run_script_from_command("SAVE_VARIABLE VARIABLE=%s VALUE='%s'" % (self.VARS_KTCC_TOOL_MAP, self.tool_map))
+
+    def _tool_map_to_human_string(self):
+        msg = "Number of tools remaped: " + str(len(self.tool_map))
+
+        for from_tool, to_tool in self.tool_map.items():
+            msg += "\nTool %s-> Tool %s" % ( str(from_tool), str(to_tool))
+
+        return msg
+
+    def tool_is_remaped(self, tool_to_check):
+        if tool_to_check in self.tool_map:
+            return self.tool_map[tool_to_check]
+        else:
+            return -1
+
+    def _remap_tool(self, tool, gate, available):
+        self._set_tool_to_tool(tool, gate)
+        # self._set_tool_status(gate, available)
+
+    def _reset_tool_mapping(self):
+        self.log.debug("Resetting Tool map")
+        self.tool_map = {}
+        self.gcode.run_script_from_command("SAVE_VARIABLE VARIABLE=%s VALUE='%s'" % (self.VARS_KTCC_TOOL_MAP, self.tool_map))
+        self._unselect_tool()
+
+### GCODE COMMANDS FOR TOOL REMAP LOGIC ##################################
+
+    cmd_KTCC_DISPLAY_TOOL_MAP_help = "Display the current mapping of tools to other KTCC tools." # Used with endless spool" in the future
+    def cmd_KTCC_DISPLAY_TOOL_MAP(self, gcmd):
+        summary = gcmd.get_int('SUMMARY', 0, minval=0, maxval=1)
+        self.log.always(self._tool_map_to_human_string())
+
+
+    cmd_KTCC_CHECK_TOOL_REMAP_help = "Display"
+    def cmd_KTCC_CHECK_TOOL_REMAP(self, gcmd):
+        tool = gcmd.get_int('TOOL', -1, minval=0)
+        self.log.always(str( self.tool_is_remaped(tool)))
+
+
+    cmd_KTCC_REMAP_TOOL_help = "Remap a tool to another one."
+    def cmd_KTCC_REMAP_TOOL(self, gcmd):
+        reset = gcmd.get_int('RESET', 0, minval=0, maxval=1)
+        if reset == 1:
+            self._reset_tool_mapping()
+        else:
+            from_tool = gcmd.get_int('TOOL', -1, minval=0)
+            to_tool = gcmd.get_int('SET', minval=0)
+            available = 1 #gcmd.get_int('AVAILABLE', -1, minval=0, maxval=1)  #For future endless spool mode.
+            # if available == -1:
+            #     available = self.tool_status[to_tool]
+            if from_tool != -1:
+                self._remap_tool(from_tool, to_tool, available)
+            # else:
+            #     self._set_tool_status(to_tool, available)
+        self.log.info(self._tool_map_to_human_string())
 
 def load_config(config):
     return ToolLock(config)

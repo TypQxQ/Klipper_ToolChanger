@@ -200,9 +200,22 @@ class Tool:
 
     cmd_SelectTool_help = "Select Tool"
     def cmd_SelectTool(self, gcmd):
+        self.log.trace("T" + str(self.name) + " Selected.")
+
+        # Check if the requested tool has been remaped to another one.
+        tool_is_remaped = self.toollock.tool_is_remaped(int(self.name))
+        if tool_is_remaped > -1:
+            self.log.always("Tool %d is remaped to Tool %d" % (self.name, tool_is_remaped))
+            remaped_tool = self.printer.lookup_object('tool ' + str(tool_is_remaped))
+            remaped_tool.select_tool_actual(gcmd)
+            return
+        else:
+            self.select_tool_actual(gcmd)
+
+    # To avoid recursive remaping.
+    def select_tool_actual(self, gcmd):
         current_tool_id = int(self.toollock.get_status()['tool_current']) # int(self.toollock.get_tool_current())
 
-        self.log.trace("T" + str(self.name) + " Selected.")
         self.log.trace("Current Tool is T" + str(current_tool_id) + ".")
         self.log.trace("This tool is_virtual is " + str(self.is_virtual) + ".")
 
