@@ -17,6 +17,7 @@
 class ToolLock:
     TOOL_UNKNOWN = -2
     TOOL_UNLOCKED = -1
+    BOOT_DELAY = 1.5            # Delay before running bootup tasks
     VARS_KTCC_TOOL_MAP = "ktcc_state_tool_remap"
 
     def __init__(self, config):
@@ -55,7 +56,44 @@ class ToolLock:
             desc = getattr(self, 'cmd_' + cmd + '_help', None)
             self.gcode.register_command(cmd, func, False, desc)
 
-        self.printer.register_event_handler("klippy:ready", self.Initialize_Tool_Lock)
+        self.printer.register_event_handler("klippy:ready", self.handle_ready)
+
+    def handle_ready(self):
+        # Load persistent Tool remaping.
+        self.tool_map = self.printer.lookup_object('save_variables').allVariables.get(self.VARS_KTCC_TOOL_MAP, {})
+        waketime = self.reactor.monotonic() + self.BOOT_DELAY
+        self.reactor.register_callback(self._bootup_tasks, waketime)
+
+    def _bootup_tasks(self, eventtime):
+        try:
+            if len(self.tool_map) > 0:
+                self.log.always(self._tool_map_to_human_string())
+            self.Initialize_Tool_Lock()
+        except Exception as e:
+            self._log_always('Warning: Error booting up KTCC: %s' % str(e))
+
+    def Initialize_Tool_Lock(self):
+        if not self.init_printer_to_last_tool:
+            return None
+
+        # self.log.always("Initialize_Tool_Lock running.")
+        save_variables = self.printer.lookup_object('save_variables')
+        try:
+            self.tool_current = save_variables.allVariables["tool_current"]
+        except:
+            self.tool_current = "-1"
+            save_variables.cmd_SAVE_VARIABLE(self.gcode.create_gcode_command(
+                "SAVE_VARIABLE", "SAVE_VARIABLE", {"VARIABLE": "tool_current", 'VALUE': self.tool_current }))
+
+        if str(self.tool_current) == "-1":
+            self.cmd_TOOL_UNLOCK()
+            self.log.always("ToolLock initialized unlocked")
+
+        else:
+            t = self.tool_current
+            self.ToolLock(True)
+            self.SaveCurrentTool(str(t))
+            self.log.always("ToolLock initialized with T%s." % self.tool_current) 
 
     cmd_TOOL_LOCK_help = "Lock the ToolLock."
     def cmd_TOOL_LOCK(self, gcmd = None):
@@ -117,34 +155,6 @@ class ToolLock:
         t = gcmd.get_int('T', None, minval=-2)
         if t is not None:
             self.SaveCurrentTool(t)
-
-    def Initialize_Tool_Lock(self):
-        # Load persistent Tool remaping.
-        self.tool_map = self.printer.lookup_object('save_variables').allVariables.get(self.VARS_KTCC_TOOL_MAP, {})
-        if len(self.tool_map) > 0:
-            self.log.always(self._tool_map_to_human_string())
-
-        if not self.init_printer_to_last_tool:
-            return None
-
-        self.log.always("Initialize_Tool_Lock running.")
-        save_variables = self.printer.lookup_object('save_variables')
-        try:
-            self.tool_current = save_variables.allVariables["tool_current"]
-        except:
-            self.tool_current = "-1"
-            save_variables.cmd_SAVE_VARIABLE(self.gcode.create_gcode_command(
-                "SAVE_VARIABLE", "SAVE_VARIABLE", {"VARIABLE": "tool_current", 'VALUE': self.tool_current }))
-
-        if str(self.tool_current) == "-1":
-            self.cmd_TOOL_UNLOCK()
-            self.log.always("ToolLock initialized unlocked")
-
-        else:
-            t = self.tool_current
-            self.ToolLock(True)
-            self.SaveCurrentTool(str(t))
-            self.log.always("ToolLock initialized with T%s." % self.tool_current) 
 
     cmd_SET_AND_SAVE_FAN_SPEED_help = "Save the fan speed to be recovered at ToolChange."
     def cmd_SET_AND_SAVE_FAN_SPEED(self, gcmd):
@@ -533,13 +543,6 @@ class ToolLock:
     def cmd_KTCC_DISPLAY_TOOL_MAP(self, gcmd):
         summary = gcmd.get_int('SUMMARY', 0, minval=0, maxval=1)
         self.log.always(self._tool_map_to_human_string())
-
-
-    cmd_KTCC_CHECK_TOOL_REMAP_help = "Display"
-    def cmd_KTCC_CHECK_TOOL_REMAP(self, gcmd):
-        tool = gcmd.get_int('TOOL', -1, minval=0)
-        self.log.always(str( self.tool_is_remaped(tool)))
-
 
     cmd_KTCC_REMAP_TOOL_help = "Remap a tool to another one."
     def cmd_KTCC_REMAP_TOOL(self, gcmd):
