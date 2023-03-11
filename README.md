@@ -1,36 +1,32 @@
 # Tools for klipper (KTCC - Klipper Tool Changer Code)
 
-This are python extras, macros and example config for the
-[Klipper 3D printer firmware](https://github.com/Klipper3d/klipper). I
-originally created this as macros when converting my Jubilee based
-toolchanger from RRF and Duet3 to Klipper.
+This are python modules, macros and example config for the
+[Klipper 3D printer firmware](https://github.com/Klipper3d/klipper). 
+In short 
 
-I welcome all contribution!
+At it's simplest you need for each extruder tool to specify extruder, fan, offset to first tool or probe.
+Then specify four macros: pickup, dropoff, toollock and toolunlock.
+It doesn't matter if you lock the tool by a servo, a stepper or moving in a special way as long as it can be written in GCODE.
 
-This is working great but treat it as a Beta version in development.
+You can hardcode one pickup and dropoff macro for each tool or only one that uses the parameters stored for each tool to for example aproach he ZONE fast, slower to PARKING place, or the PARKING coordinates could be where a robotic arm picks up the tool. You decide how to use it :D
+
+This is working great for my printer and sharing this because there is nothing like it for Klipper.
 
 ## Features
 
 * **Each Tool is treated as an object and has it's own configuration** -
 having configurable coordinates for parking, zoning, tool offset, 
-meltzonelength, extruder, fan, etc.
+meltzonelength, extruder, fan, etc. You can use all or none.
 *  **Multiple tools can be grouped in ToolGroup.** -Most configuration can
 be inherited from the group if not specified in the tool config section.
-*  **Virtual tools** - A tool can be virtual and have a physical parent,
-inheriting all nonspecified configuration from parent, parent group and
-then toolgroup. Use case example of an ERCF on a PLA tool,a ERCF on a 
-PETG tool, one tool without virtual tools for abrasive and yet another
-tool with 3 markers that can switch between 3 markers by rotation.
 * **Tools don't need to be extruders/hotends**, can be anything.
 * **User defineable macro to Lock / Unlock** - Uses custom gcodes in config 
 like the gcode_button. This can call a macro or multiple lines. 
-* **User defineable macro to Pickup / Dropoff tools** - Can be inherited.
+* **User defineable macro to Pickup / Dropoff tools** - Can be inherited from group so one for many or you specify a macro or code for each.
 In the macro, `myself` refers to the calling toolobject so you can get 
 myself.id for tool number or myself.offset[0] for X offset in the macro.
 Ex. having same pickup gcode macro inherited for all tools from a group 
 except for one that uses another type of toolwipe and has it's own pickup_gcode.
-* **Global ToolLock parameters** - example purge_on_toolchange can be set 
-to false when aligning tools with TAMV/ZTATP.
 * **Fan speed** is carried over on toolchange if the tool has a fan. Also
 `M106`/`M107` defaults to current_tool to set fan speed but can also use a Pnnn 
 parameter to specify another tool.
@@ -43,12 +39,17 @@ parameter to specify another tool.
     - Or set Time to standby to 0.1 for instant standby and Time to Powerdown to 604800 for a having it powered for a week.
     - Usefull when having sporadic toolchanges in a large print or many toolchanges in a small print.
   - Wait to reach temperature with tolerance. Set temperature +/- configurable tolerance.
+* **Global ToolLock parameters** - example purge_on_toolchange can be set 
+to false when aligning tools with TAMV/ZTATP automation. 
 * Current Tool is saved and restored at powerdown. Default but optional.
-* Input shaper parameters for each tool.
-* Position prior to toolchange can optionaly be saved and restored.
+* Position prior to toolchange can optionaly be saved and restored so the tool returns from where it came.
 * Logging including to file functionality. You can keep the console log to a minimum and send debugging information to `ktcc.log` located in the same directory as Klipper logs.
-* Logging including to file functionality. You can keep the console log to a minimum and send debugging information to `ktcc.log` located in the same directory as Klipper logs.
-# Statistics per print and persistent that look like this:
+*  **Virtual tools** - A tool can be virtual and have a physical parent,
+inheriting all nonspecified configuration from parent, parent group and
+then toolgroup. Use case example of an ERCF on a PLA tool,a ERCF on a 
+PETG tool, one tool without virtual tools for abrasive and yet another
+tool with 3 markers that can switch between 3 markers by rotation.
+# Statistics are saved for total but also per print:
 ```
 ToolChanger Statistics:
 KTCC Statistics:
