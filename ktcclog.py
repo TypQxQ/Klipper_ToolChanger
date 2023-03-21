@@ -119,11 +119,11 @@ class KtccLog:
 
     cmd_KTCC_G28_help = "Homing axes."
     def cmd_KTCC_G28(self, gcmd):
-        self.always("Starting G28")
+        # self.trace("Starting G28")
         self.save_active = False                    # Don't try to use SAVE_VARIABLE commands.
         self.prev_G28(gcmd)
         self.save_active = True                     # Resume to use SAVE_VARIABLE commands.
-        self.always("Ending G28")
+        # self.trace("Ending G28")
 
     def _save_changes_timer_event(self, eventtime):
         try:
