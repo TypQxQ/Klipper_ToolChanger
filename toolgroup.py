@@ -19,7 +19,8 @@ class ToolGroup:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.name = config.get_name().split(' ')[1]
-        gcode_macro = self.printer.load_object(config, 'gcode_macro')
+        self.config = config
+        # gcode_macro = self.printer.load_object(config, 'gcode_macro')
 
         try:
             _, name = config.get_name().split(' ', 1)
@@ -43,18 +44,14 @@ class ToolGroup:
         self.idle_to_standby_time = config.getfloat( 'idle_to_standby_time', 30, minval = 0.1)
         self.idle_to_powerdown_time = config.getfloat( 'idle_to_powerdown_time', 600, minval = 0.1)
 
-    def get_pickup_gcode(self):
-        return self.pickup_gcode
+        self.requires_pickup_for_virtual_load = self.config.getboolean("requires_pickup_for_virtual_load", True)
+        self.requires_pickup_for_virtual_unload = self.config.getboolean("requires_pickup_for_virtual_unload", True)
+        self.unload_virtual_at_dropoff = self.config.getboolean("unload_virtual_at_dropoff", True)
 
-    def get_dropoff_gcode(self):
-        return self.dropoff_gcode
 
-    def get_virtual_toolload_gcode(self):
-        return self.virtual_toolload_gcode
-
-    def get_virtual_toolunload_gcode(self):
-        return self.virtual_toolunload_gcode
-
+    def get_config(self, config_param, default = None):
+        return self.config.get(config_param, default)
+        
     def get_status(self, eventtime= None):
         status = {
             "is_virtual": self.is_virtual,
@@ -62,7 +59,10 @@ class ToolGroup:
             "lazy_home_when_parking": self.lazy_home_when_parking,
             "meltzonelength": self.meltzonelength,
             "idle_to_standby_time": self.idle_to_standby_time,
-            "idle_to_powerdown_time": self.idle_to_powerdown_time
+            "idle_to_powerdown_time": self.idle_to_powerdown_time,
+            "requires_pickup_for_virtual_load": self.requires_pickup_for_virtual_load,
+            "requires_pickup_for_virtual_unload": self.requires_pickup_for_virtual_unload,
+            "unload_virtual_at_dropoff": self.unload_virtual_at_dropoff
         }
         return status
 
