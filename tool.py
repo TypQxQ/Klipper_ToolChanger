@@ -298,10 +298,10 @@ class Tool:
             self.set_heater(heater_state = self.HEATER_STATE_ACTIVE)
 
         # If optional RESTORE_POSITION_TYPE parameter is passed then save current position.
-        # Otherwise do not change either the restore_position_on_toolchange_type or saved_position.
+        # Otherwise do not change either the restore_axis_on_toolchange or saved_position.
         # This makes it possible to call SAVE_POSITION or SAVE_CURRENT_POSITION before the actual T command.
         if restore_mode is not None:
-            self.toollock.SaveCurrentPosition(restore_mode) # Sets restore_position_on_toolchange_type and saves current position
+            self.toollock.SaveCurrentPosition(restore_mode) # Sets restore_axis_on_toolchange and saves current position
 
         # Drop any tools already mounted if not virtual on same.
         if current_tool_id > self.TOOL_UNLOCKED:              # If there is a current tool already selected and it's a known tool.
