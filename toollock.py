@@ -480,14 +480,14 @@ class ToolLock:
 
     cmd_SAVE_CURRENT_POSITION_help = "Save the current G-Code position."
 #  Saves current position. 
-#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_position_on_toolchange_type will not be changed.
+#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_axis_on_toolchange will not be changed.
 #    0: No restore
 #    1: Restore XY
 #    2: Restore XYZ
 #    XYZ: Restore specified axis
 
     def cmd_SAVE_CURRENT_POSITION(self, gcmd):
-        # Save optional RESTORE_POSITION_TYPE parameter to restore_position_on_toolchange_type variable.
+        # Save optional RESTORE_POSITION_TYPE parameter to restore_axis_on_toolchange variable.
         restore_axis = parse_restore_type(gcmd, 'RESTORE_POSITION_TYPE')
         self.SaveCurrentPosition(restore_axis)
 
@@ -500,7 +500,7 @@ class ToolLock:
     cmd_RESTORE_POSITION_help = "Restore a previously saved G-Code position if it was specified in the toolchange T# command."
 #  Restores the previously saved possition according to
 #   With no parameters it will Restore to previousley saved type.
-#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, previousley saved restore_position_on_toolchange_type will be used.
+#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, previousley saved restore_axis_on_toolchange will be used.
 #    0: No restore
 #    1: Restore XY
 #    2: Restore XYZ
