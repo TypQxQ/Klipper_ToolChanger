@@ -19,6 +19,7 @@
 
 # Each tool is getting an instance of this.
 import logging
+from .toollock import parse_restore_type
 
 class Tool:
     TOOL_UNKNOWN = -2
@@ -76,7 +77,7 @@ class Tool:
 
         # If called without config then just return a dummy object.
         if config is None:
-            return None
+            return
 
         # Load used objects.
         self.printer = config.get_printer()
@@ -259,7 +260,9 @@ class Tool:
     cmd_SelectTool_help = "Select Tool"
     def cmd_SelectTool(self, gcmd):
         self.log.trace("KTCC T" + str(self.name) + " Selected.")
-        param = gcmd.get_int('R', None, minval=0, maxval=2)
+        # Allow either one.
+        restore_mode = parse_restore_type(gcmd, 'R', None)
+        restore_mode = parse_restore_type(gcmd, 'RESTORE_POSITION_TYPE', restore_mode)
 
         # Check if the requested tool has been remaped to another one.
         tool_is_remaped = self.toollock.tool_is_remaped(int(self.name))
@@ -267,14 +270,14 @@ class Tool:
         if tool_is_remaped > -1:
             self.log.always("Tool %d is remaped to Tool %d" % (self.name, tool_is_remaped))
             remaped_tool = self.printer.lookup_object('tool ' + str(tool_is_remaped))
-            remaped_tool.select_tool_actual(param)
+            remaped_tool.select_tool_actual(restore_mode)
             return
         else:
-            self.select_tool_actual(param)
+            self.select_tool_actual(restore_mode)
             
 
     # To avoid recursive remaping.
-    def select_tool_actual(self, param = None):
+    def select_tool_actual(self, restore_mode = None):
         current_tool_id = int(self.toollock.get_status()['tool_current']) # int(self.toollock.get_tool_current())
 
         self.log.trace("Current Tool is T" + str(current_tool_id) + ".")
@@ -294,12 +297,11 @@ class Tool:
         if self.extruder is not None:               # If the new tool to be selected has an extruder prepare warmup before actual tool change so all unload commands will be done while heating up.
             self.set_heater(heater_state = self.HEATER_STATE_ACTIVE)
 
-        # If optional RESTORE_POSITION_TYPE parameter is passed as 1 or 2 then save current position and restore_position_on_toolchange_type as passed. Otherwise do not change either the restore_position_on_toolchange_type or saved_position. This makes it possible to call SAVE_POSITION or SAVE_CURRENT_POSITION before the actual T command.
-        if param is not None:
-            if param in [ 1, 2 ]:
-                self.toollock.SaveCurrentPosition(param) # Sets restore_position_on_toolchange_type to 1 or 2 and saves current position
-            else:
-                self.toollock.SavePosition()  # Sets restore_position_on_toolchange_type to 0
+        # If optional RESTORE_POSITION_TYPE parameter is passed then save current position.
+        # Otherwise do not change either the restore_axis_on_toolchange or saved_position.
+        # This makes it possible to call SAVE_POSITION or SAVE_CURRENT_POSITION before the actual T command.
+        if restore_mode is not None:
+            self.toollock.SaveCurrentPosition(restore_mode) # Sets restore_axis_on_toolchange and saves current position
 
         # Drop any tools already mounted if not virtual on same.
         if current_tool_id > self.TOOL_UNLOCKED:              # If there is a current tool already selected and it's a known tool.

@@ -34,7 +34,7 @@ class ToolLock:
         self.purge_on_toolchange = config.getboolean(
             'purge_on_toolchange', True)
         self.saved_position = None
-        self.restore_position_on_toolchange_type = 0   # 0: Don't restore; 1: Restore XY; 2: Restore XYZ
+        self.restore_axis_on_toolchange = '' # string of axis to restore: XYZ
         self.log = self.printer.load_object(config, 'ktcclog')
 
         self.tool_map = {}
@@ -460,11 +460,7 @@ class ToolLock:
     cmd_SAVE_POSITION_help = "Save the specified G-Code position."
 #  Sets the Restore type and saves specified position.
 #   With no parameters it will set Restore type to 0, no restore.
-#   With X and Y parameters it will save the specified X and Y. Sets restore type to 1, restore XY.
-#   With X, Y and Z parameters it will save the specified X, Y and Z. Sets restore type to 2, restore XYZ.
-#  X= X position to save, optional but Y must be specifie or this will be ignored.
-#  Y= Y position to save, optional but X must be specifie or this will be ignored.
-#  Z= Z position to save, optional but X and Y must be specifie or this will be ignored.
+#   Othervise will restore what is saved.
     def cmd_SAVE_POSITION(self, gcmd):
         param_X = gcmd.get_float('X', None)
         param_Y = gcmd.get_float('Y', None)
@@ -472,67 +468,63 @@ class ToolLock:
         self.SavePosition(param_X, param_Y, param_Z)
 
     def SavePosition(self, param_X = None, param_Y = None, param_Z = None):
-        if param_X is None or param_Y is None:
-            self.restore_position_on_toolchange_type = 0
-            return
-        elif param_Z is None:
-            self.restore_position_on_toolchange_type = 1
-        else:
-            self.restore_position_on_toolchange_type = 2
-
         self.saved_position = [param_X, param_Y, param_Z]
-
+        restore_axis = ''
+        if param_X is not None:
+            restore_axis += 'X'
+        if param_Y is not None:
+            restore_axis += 'Y'
+        if param_Z is not None:
+            restore_axis += 'Z'
+        self.restore_axis_on_toolchange = restore_axis
 
     cmd_SAVE_CURRENT_POSITION_help = "Save the current G-Code position."
 #  Saves current position. 
-#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_position_on_toolchange_type will not be changed.
+#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_axis_on_toolchange will not be changed.
 #    0: No restore
 #    1: Restore XY
 #    2: Restore XYZ
-    def cmd_SAVE_CURRENT_POSITION(self, gcmd):
-        # Save optional RESTORE_POSITION_TYPE parameter to restore_position_on_toolchange_type variable.
-        param = gcmd.get_int('RESTORE_POSITION_TYPE', None, minval=0, maxval=2)
-        self.SaveCurrentPosition(param)
+#    XYZ: Restore specified axis
 
-    def SaveCurrentPosition(self, restore_position_type = None):
-        if restore_position_type is not None:
-            if restore_position_type in [ 0, 1, 2 ]:
-                self.restore_position_on_toolchange_type = restore_position_type
-        
+    def cmd_SAVE_CURRENT_POSITION(self, gcmd):
+        # Save optional RESTORE_POSITION_TYPE parameter to restore_axis_on_toolchange variable.
+        restore_axis = parse_restore_type(gcmd, 'RESTORE_POSITION_TYPE')
+        self.SaveCurrentPosition(restore_axis)
+
+    def SaveCurrentPosition(self, restore_axis = None):
+        if restore_axis is not None:
+            self.restore_axis_on_toolchange = restore_axis
         gcode_move = self.printer.lookup_object('gcode_move')
         self.saved_position = gcode_move._get_gcode_position()
 
     cmd_RESTORE_POSITION_help = "Restore a previously saved G-Code position if it was specified in the toolchange T# command."
-#  Restores the previously saved possition according to 
+#  Restores the previously saved possition according to
 #   With no parameters it will Restore to previousley saved type.
-#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, previousley saved restore_position_on_toolchange_type will be used.
+#  RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, previousley saved restore_axis_on_toolchange will be used.
 #    0: No restore
 #    1: Restore XY
 #    2: Restore XYZ
+#    XYZ: Restore specified axis
     def cmd_RESTORE_POSITION(self, gcmd):
-        self.log.trace("cmd_RESTORE_POSITION running: " + str(self.restore_position_on_toolchange_type))
+        self.restore_axis_on_toolchange = parse_restore_type(gcmd, 'RESTORE_POSITION_TYPE', default=self.restore_axis_on_toolchange)
+        self.log.trace("cmd_RESTORE_POSITION running: " + str(self.restore_axis_on_toolchange))
+        speed = gcmd.get_int('F', None)
 
-        param = gcmd.get_int('RESTORE_POSITION_TYPE', None, minval=0, maxval=2)
-
-        if param is not None:
-            if param == 0 or param == 1 or param == 2:
-                self.restore_position_on_toolchange_type = param
-
-        if self.restore_position_on_toolchange_type == 0:
-            return
-
+        if not self.restore_axis_on_toolchange:
+            return # No axis to restore
         if self.saved_position is None:
             raise gcmd.error("No previously saved g-code position.")
 
         try:
             p = self.saved_position
-            if self.restore_position_on_toolchange_type == 1:
-                v=str("G1 X%.3f Y%.3f" % (p[0], p[1]))
-            elif self.restore_position_on_toolchange_type == 2:
-                v=str("G1 X%.3f Y%.3f Z%.3f" % (p[0], p[1], p[2]))
+            cmd = 'G1'
+            for t in self.restore_axis_on_toolchange:
+                cmd += ' %s%.3f' % (t, p[XYZ_TO_INDEX[t]])
+            if speed:
+                cmd += " F%i" % (speed,)
             # Restore position
-            self.log.trace("cmd_RESTORE_POSITION running: " + v)
-            self.gcode.run_script_from_command(v)
+            self.log.trace("cmd_RESTORE_POSITION running: " + cmd)
+            self.gcode.run_script_from_command(cmd)
         except:
             raise gcmd.error("Could not restore position.")
 
@@ -542,7 +534,7 @@ class ToolLock:
             "tool_current": self.tool_current,
             "saved_fan_speed": self.saved_fan_speed,
             "purge_on_toolchange": self.purge_on_toolchange,
-            "restore_position_on_toolchange_type": self.restore_position_on_toolchange_type,
+            "restore_axis_on_toolchange": self.restore_axis_on_toolchange,
             "saved_position": self.saved_position,
             "last_endstop_query": self.last_endstop_query
         }
@@ -676,6 +668,28 @@ class ToolLock:
         # self.log.debug("Endstop %s is %s Triggered after #%d checks." % (endstop_name, ("" if is_triggered else "Not"), i))
 
         self.last_endstop_query[endstop_name] = is_triggered
+
+# parses legacy type into string of axis names.
+# Raises gcode error on fail
+def parse_restore_type(gcmd, arg_name, default = None):
+    type = gcmd.get(arg_name, None)
+    if type is None:
+        return default
+    elif type == '0':
+        return ''
+    elif type == '1':
+        return 'XY'
+    elif type == '2':
+        return 'XYZ'
+    # Validate this is XYZ
+    for c in type:
+        if c not in XYZ_TO_INDEX:
+            raise gcmd.error("Invalid RESTORE_POSITION_TYPE")
+    return type
+
+XYZ_TO_INDEX = {'x': 0, 'X':0, 'y':1, 'Y': 1, 'z': 2, 'Z':2}
+INDEX_TO_XYZ = ['X','Y','Z']
+
 
 def load_config(config):
     return ToolLock(config)
