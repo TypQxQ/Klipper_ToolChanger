@@ -39,25 +39,9 @@ Thank you!
 ## Readme Table of Contents
 **[Major feature](#---major-features))**<br>
 **[Installation](#---installation)**<br>
-**[Basic Commands](#---basic-commands-and-printer-variables)**<br>
-**[Setup & Calibration](#---setup-and-calibration)**<br>
-**[Important Concepts and Features](#---important-concepts-and-features)**<br>
 \- [1. How to handle errors](#1-how-to-handle-errors)<br>
 \- [2. State and Persistence](#2-state-and-persistence)<br>
-\- [3. Tool to Gate Mapping](#3-tool-to-gate-ttg-mapping)<br>
-\- [4. Synchronized Gear/Extruder](#4-synchronized-gearextruder-motors)<br>
-\- [5. Clog, Runout, EndlessSpool, Flowrate](#5-clogrunout-detection-endlessspool-and-flowrate-monitoring)<br>
-\- [6. Logging me](#6-logging)<br>
-\- [7. Pause/Resume/Cancel](#7-pause--resume--cancel_print-macros)<br>
-\- [8. Recovering MMU state](#8-recovering-mmu-state)<br>
-\- [9. Gate statistics](#9-gate-statistics)<br>
-\- [10. Filament bypass](#10-filament-bypass)<br>
-\- [11. Pre-print functions](#11-useful-pre-print-functionality)<br>
-\- [12. Gate map, Filament type and color](#12-gate-map-describing-filament-type-color-and-status)<br>
-**[Loading and Unloading Sequences](#---filament-loading-and-unloading-sequences)**<br>
-**[KlipperScreen Happy Hare Edition](#---klipperscreen-happy-hare-edition)**<br>
-**[My Testing / Setup](#---my-testing)**<br>
-**[Revision History](#---revision-history)**<br>
+...
 
 #### Other Docs:
 
@@ -93,7 +77,8 @@ Thank you!
 <br>
 
 ## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Installation
-### Install with Moonraker Autoupdate Support
+
+### 1\. Install with Moonraker Autoupdate Support
 This plugin assumes that you installed Klipper into your home directory (usually `/home/pi`). 
 
 1) Clone this repo into your home directory where Klipper is installed:
@@ -120,7 +105,7 @@ is_system_service: False
 Klipper_ToolChanger will show up in the update the next time you restart moonraker, or you can restart mooraker right away with: `sudo systemctl restart moonraker`.
 If you encouter errors after an automatic Klipper update you can safetly run the `install.sh` scipt again to repair the links to the extension.
 
-### Manual Install
+### 2\. Manual Install
 Copy the python (`*.py`) files into the `\klipper\klipper\extras` directory. Assuming Klipper is installed in your home directory:
 ```
 cp ./*.py ~/klipper/klippy/extras/
@@ -131,76 +116,7 @@ Then restart Klipper to pick up the extensions.
 * `[input_shaper]` needs to be used for input shaper to wordk.
 
 ## G-Code commands:
-* `TOOL_LOCK` - Lock command
-* `TOOL_UNLOCK` - Unlock command
-* `KTCC_Tn` - T0, T1, T2, etc... A select command is created for each tool. 
-  * `R` - Calls SAVE_CURRENT_POSITION with the variable as a RESTORE_POSITION_TYPE. For example "T0 R1" will call "SAVE_CURRENT_POSITION RESTORE_POSITION_TYPE=1" before moving. Positioned is restored with "RESTORE_POSITION" from below.
-* `KTCC_TOOL_DROPOFF_ALL` - Dropoff the current tool without picking up another tool
-* `SET_AND_SAVE_FAN_SPEED` - Set the fan speed of specified tool or current tool if no `P` is supplied. Then save to be recovered at ToolChange.
-  * `S` - Fan speed 0-255 or 0-1, default is 1, full speed.
-  * `P` - Fan of this tool. Default current tool.
-* `TEMPERATURE_WAIT_WITH_TOLERANCE` - Waits for all temperatures, or a specified tool or heater's temperature.
-This command can be used without any additional parameters. Without parameters it waits for bed and current extruder. Only one of either TOOL or HEATER may be used.
-  - `TOOL` - Tool number.
-  - `HEATER` - Heater number. 0="heater_bed", 1="extruder", 2="extruder1", 3="extruder2", etc. Only works if named as default, this way.
-  - `TOLERANCE` - Tolerance in degC. Defaults to 1*C. Wait will wait until heater is between set temperature +/- tolerance.
-* `SET_TOOL_TEMPERATURE` - Set tool temperature.
-  * `TOOL` - Tool number, optional. If this parameter is not provided, the current tool is used.
-  * `STDB_TMP` - Standby temperature(s), optional
-  * `ACTV_TMP` - Active temperature(s), optional
-  * `CHNG_STATE` - Change Heater State, optional: 0 = off, 1 = standby temperature(s), 2 = active temperature(s).
-  * `STDB_TIMEOUT` - Time in seconds to wait between changing heater state to standby and setting heater target temperature to standby temperature when standby temperature is lower than tool temperature.
-    * Use for example 0.1 to change immediately to standby temperature.
-  * `SHTDWN_TIMEOUT` - Time in seconds to wait from docking tool to shutting off the heater, optional.
-    * Use for example 86400 to wait 24h if you want to disable shutdown timer.
-* `SET_GLOBAL_OFFSET` - Set a global offset that can be applied to all tools
-  * `X` / `Y` / `Z` - Set the X/Y/Z offset position
-  * `X_ADJUST` / `Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally
-* `SET_TOOL_OFFSET` - Set the offset of an individual tool
-  * `TOOL` - Tool number, optional. If this parameter is not provided, the current tool is used.
-  * `X` / `Y` / `Z` - Set the X/Y/Z offset position
-  * `X_ADJUST` /`Y_ADJUST` / `Z_ADJUST` - Adjust the X/Y/Z offset position incramentally  
-* `SET_PURGE_ON_TOOLCHANGE` - Sets a global variable that can disable all purging (can be used in macros) when loading/unloading. For example when doing a TAMV/ZTATP tool alignement.
-* `SAVE_POSITION` - Sets the Restore type and saves specified position for the toolhead. This command is usually used inside the custom g-code of the slicer software. The restore_position_on_toolchange_type will be changed to reflect the passed parameters.
-  * X= X position to save
-  * Y= Y position to save
-  * Z= Z position to save
-* `SAVE_CURRENT_POSITION` - Save the current G-Code position of the toolhead. This command is usually used inside the pickup_gcode script or the custom g-code of the slicer software.
-  * RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, restore_position_on_toolchange_type will not be changed. 
-    * 0/Empty: No restore
-    * XYZ: Restore specified axis
-    * 1: Restore XY
-    * 2: Restore XYZ
-* `RESTORE_POSITION` - Restore position to the latest saved position. This command is usually used inside the pickup_gcode script.
-  * RESTORE_POSITION_TYPE= Type of restore, optional. If not specified, type set during save will be used.
-    * 0/Empty: No restore
-    * XYZ: Restore specified axis
-    * 1: Restore XY
-    * 2: Restore XYZ
-* `KTCC_SET_GCODE_OFFSET_FOR_CURRENT_TOOL` - 
-* `KTCC_LOG_TRACE` - Send a message to log at this logging level.
-  * MSG= The message to be sent.
-* `KTCC_LOG_DEBUG` - As above for this level.
-* `KTCC_LOG_INFO` - As above for this level.
-* `KTCC_LOG_ALWAYS` - As above for this level.
-* `KTCC_SET_LOG_LEVEL` - Set the log level for the KTCC
-  * LEVEL= Level of logging to print on screen
-    * 0: Only the Always messages
-    * 1: Info messages and above
-    * 2: Debug messages and above
-    * 3: Trace messages and above
-  * LOGFILE= Level of logging to save to file, KTCC.log in same directory as other logs.
-* `KTCC_DUMP_STATS` - Dump the KTCC statistics
-* `KTCC_RESET_STATS` - Resets all saved statistics, you may regret this.
-* `KTCC_INIT_PRINT_STATS` - Run at start of a print to reset the KTCC print statistics.
-* `KTCC_DUMP_PRINT_STATS` - Run at end of a print to list statistics since last print reset.
-* `KTCC_DISPLAY_TOOL_MAP` - Display the current mapping of tools to other KTCC tools.
-* `KTCC_REMAP_TOOL` - The command to remap a tool or reset the remaping. 'KTCC_REMAP_TOOL TOOL=0 SET=5' will remap KTCC_T0 to KTCC_T5. State is saved and reloaded after restart.
-  * RESET= 1
-    * 0: Default, do not reset.
-    * 1: Reset all remaps.
-  * TOOL= The toolnumber you want to remap
-  * SET= The toolnumber you want to remap to.
+Reffer to the [Command Reference](./doc/command_ref.md).<br>
 
 ## Values accesible from Macro for each object
 - **Toollock**
