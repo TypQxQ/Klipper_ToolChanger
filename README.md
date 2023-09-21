@@ -31,6 +31,8 @@ It doesn't matter if you lock the tool by a servo, stepper or moving the toolhea
 Pickups are also custom Gcode. You can uses the parameters stored for each tool to aproach he ZONE fast, slow in 
 to PARKING place and lock. Or it have a robotic arm place the tool. It's all posible. :D
 
+[This](https://www.youtube.com/watch?v=cbRXn7R7JZM&t=52s) is a more complex example of it running on a toolchanger with an aditional ERCF under one tool. T0-8 uses first tool with virtual tools for the ERCF, calling the toolchanges recursively.
+
 Inspiration comes mainly from how RRF enables toolchanging and from the HappyHare project.
 I welcome any and all input and contributions. Don't be afraid to make a pull request :D
 
