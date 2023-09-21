@@ -37,15 +37,20 @@ I welcome any and all input and contributions. Don't be afraid to make a pull re
 Thank you!
 
 ## Readme Table of Contents
-**[Major feature](#---major-features))**<br>
+**[Major feature](#---major-features)**<br>
 **[Installation](#---installation)**<br>
-\- [1. How to handle errors](#1-how-to-handle-errors)<br>
-\- [2. State and Persistence](#2-state-and-persistence)<br>
+\- [1-Install with Moonraker Autoupdate Support](#1-install-with-moonraker-autoupdate-support)<br>
+\- [2-Manual Install](#2-manual-install)<br>
+**[Configuration requirements](#configuration-requirements)**<br>
+**[G-Code commands]([#g-code-commands)**<br>
+**[Values accesible from Macro for each object](#values-accesible-from-macro-for-each-object)**<br>
+**[Example configuration](#example-configuration)**<br>
+
 ...
 
 #### Other Docs:
 
-**[Command Reference](./doc/command_ref.md)**<br>
+**[Command Reference](./doc/command_ref.md)<br>
 
 <br>
  
