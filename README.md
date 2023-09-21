@@ -162,12 +162,14 @@ Reffer to the [Command Reference](./doc/command_ref.md).<br>
 My full and updated configuration file backup can be found here:
 https://github.com/TypQxQ/DuetBackup/tree/main/qTC-Klipper
 
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 21/09/2023
+Added individual axis to position saving and restoring commands. Commited by viesturz.
+
 ## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 09/03/2023
 Added Tool Remap. Point one or more tools to another one. Including fan and temperature. This is persistent at reboot.
 * `KTCC_DISPLAY_TOOL_MAP` - Display the current mapping of tools to other KTCC tools.
 * `KTCC_REMAP_TOOL` - The command to remap a tool or reset the remaping.
 * `KTCC_CHECK_TOOL_REMAP` - Display all tool remaps.
-
 
 ## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 08/03/2023
 Added per print statistics and a wrapper around G28 to disable saving statistics while homing.
