@@ -50,7 +50,7 @@ Thank you!
 
 #### Other Docs:
 
-**[Command Reference](./doc/command_ref.md)<br>
+**[Command Reference](./doc/command_ref.md)**<br>
 
 <br>
  
