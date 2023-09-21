@@ -48,8 +48,6 @@ Thank you!
 **[Values accesible from Macro for each object](#---values-accesible-from-macro-for-each-object)**<br>
 **[Example configuration](#---example-configuration)**<br>
 
-...
-
 #### Other Docs:
 
 **[Command Reference](./doc/command_ref.md)**<br>
