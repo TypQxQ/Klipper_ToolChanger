@@ -42,7 +42,7 @@ Thank you!
 \- [1-Install with Moonraker Autoupdate Support](#1-install-with-moonraker-autoupdate-support)<br>
 \- [2-Manual Install](#2-manual-install)<br>
 **[Configuration requirements](#configuration-requirements)**<br>
-**[G-Code commands]([#g-code-commands)**<br>
+**[G-Code commands](#g-code-commands)**<br>
 **[Values accesible from Macro for each object](#values-accesible-from-macro-for-each-object)**<br>
 **[Example configuration](#example-configuration)**<br>
 
