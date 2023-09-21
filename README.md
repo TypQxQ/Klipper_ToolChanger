@@ -43,10 +43,10 @@ Thank you!
 **[Installation](#---installation)**<br>
 \- [1-Install with Moonraker Autoupdate Support](#1-install-with-moonraker-autoupdate-support)<br>
 \- [2-Manual Install](#2-manual-install)<br>
-**[Configuration requirements](#configuration-requirements)**<br>
-**[G-Code commands](#g-code-commands)**<br>
-**[Values accesible from Macro for each object](#values-accesible-from-macro-for-each-object)**<br>
-**[Example configuration](#example-configuration)**<br>
+**[Configuration requirements](#---configuration-requirements)**<br>
+**[G-Code commands](#---g-code-commands)**<br>
+**[Values accesible from Macro for each object](#---values-accesible-from-macro-for-each-object)**<br>
+**[Example configuration](#---example-configuration)**<br>
 
 ...
 
@@ -119,13 +119,13 @@ cp ./*.py ~/klipper/klippy/extras/
 ```
 Then restart Klipper to pick up the extensions.
 
-## Configuration requirements
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Configuration requirements
 * `[input_shaper]` needs to be used for input shaper to wordk.
 
-## G-Code commands:
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) G-Code commands:
 Reffer to the [Command Reference](./doc/command_ref.md).<br>
 
-## Values accesible from Macro for each object
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Values accesible from Macro for each object
 - **Toollock**
   - `global_offset` - Global offset.
   - `tool_current` - -2: Unknown tool locked, -1: No tool locked, 0: and up are toolnames.
@@ -158,24 +158,24 @@ Reffer to the [Command Reference](./doc/command_ref.md).<br>
   - `physical_parent_id` - As above
   - `lazy_home_when_parking` - As above
 
-## Example configuration
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Example configuration
 My full and updated configuration file backup can be found here:
 https://github.com/TypQxQ/DuetBackup/tree/main/qTC-Klipper
 
-## Updates 09/03/2023
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 09/03/2023
 Added Tool Remap. Point one or more tools to another one. Including fan and temperature. This is persistent at reboot.
 * `KTCC_DISPLAY_TOOL_MAP` - Display the current mapping of tools to other KTCC tools.
 * `KTCC_REMAP_TOOL` - The command to remap a tool or reset the remaping.
 * `KTCC_CHECK_TOOL_REMAP` - Display all tool remaps.
 
 
-## Updates 08/03/2023
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 08/03/2023
 Added per print statistics and a wrapper around G28 to disable saving statistics while homing.
 The latter led to MCU Timer to close error when loading a tool at homing.
 * `KTCC_INIT_PRINT_STATS` - Run at start of a print to reset the KTCC print statistics.
 * `KTCC_DUMP_PRINT_STATS` - Run at end of a print to list statistics since last print reset.
 
-## Updates 22/02/2023
+## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 22/02/2023
 This is not a simple upgrade, it has some configuration updates.
 A namechange to KTCC (Klipper Tool Changer Code) is also in the works).
 
