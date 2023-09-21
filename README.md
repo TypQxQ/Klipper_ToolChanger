@@ -37,8 +37,8 @@ I welcome any and all input and contributions. Don't be afraid to make a pull re
 Thank you!
 
 ## Readme Table of Contents
-**[Major feature](#major-features)**<br>
-**[Installation](#installation)**<br>
+**[Major feature](#---major-features))**<br>
+**[Installation](#---installation)**<br>
 **[Basic Commands](#---basic-commands-and-printer-variables)**<br>
 **[Setup & Calibration](#---setup-and-calibration)**<br>
 **[Important Concepts and Features](#---important-concepts-and-features)**<br>
