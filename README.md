@@ -51,6 +51,8 @@ Thank you!
 #### Other Docs:
 
 **[Command Reference](./doc/command_ref.md)**<br>
+**[Required and Optional Macros](./klipper_macros/readme.md)**<br>
+**[Configuration Reference](./config/readme.md)**<br>
 
 <br>
  
