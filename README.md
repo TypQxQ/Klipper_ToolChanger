@@ -51,6 +51,9 @@ Thank you!
 #### Other Docs:
 
 **[Command Reference](./doc/command_ref.md)**<br>
+**[Optional Macros](./config/optional_macros/readme.md)**<br>
+**[Command Reference](./doc/command_ref.md)**<br>
+**[Configuration Reference](./doc/command_ref.md)**<br>
 
 <br>
  
