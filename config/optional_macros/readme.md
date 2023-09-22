@@ -1,4 +1,4 @@
-# Required and Optional macros
+# Required and Optional G-code macros
 
 The required macros change how Klipper uses those commands to make use of the toolchanger. They are all backwards compatible. This macros are highly recommended to be included.
 
