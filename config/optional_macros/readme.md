@@ -8,7 +8,7 @@ The optional macros are to add more commands for higher compatibility with for e
 > You can add the whole directory to the printer.cfg by adding the relative path to the macros directory for example:
 
 ```
-[include toolchanger/macros/*.cfg]
+[include toolchanger/g-code_macros/*.cfg]
 ```
 
 <br>
