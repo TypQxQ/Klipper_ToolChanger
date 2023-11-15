@@ -26,7 +26,16 @@ class ToolLock:
         self.gcode = self.printer.lookup_object('gcode')
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
 
-        self.global_offset = [0, 0, 0]    # Global offset to apply to all tools
+        self.global_offset = config.get('global_offset', "0,0,0")
+        if isinstance(self.global_offset, str):
+            offset_list = self.global_offset.split(',')
+            if len(offset_list) == 3 and all(x.replace('.', '').isdigit() for x in offset_list):
+                self.global_offset = [float(x) for x in offset_list]
+            else:
+                raise ValueError("global_offset is not a string containing 3 float numbers separated by ,")
+        else:
+            raise TypeError("global_offset is not a string")
+        
         self.saved_fan_speed = 0          # Saved partcooling fan speed when deselecting a tool with a fan.
         self.tool_current = "-2"          # -2 Unknown tool locked, -1 No tool locked, 0 and up are tools.
         self.init_printer_to_last_tool = config.getboolean(

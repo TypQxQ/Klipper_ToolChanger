@@ -25,6 +25,8 @@ Configures the Locking mechanism and other common configuration for the Tools mo
 #   Here we can disable all purging. When disabled it overrides all other purge options. 
 #   This can be turned off by a macro for automatic probing hot tools without probing them. 
 #   For example when doing TAMV or ZTATP. The default is True.
+#global_offset: 0,0,0
+#   Optional offset that can be accesed in macros and added to all tools. Can be usefull for diailing in the first layer.
 #init_printer_to_last_tool: True
 #   Initialise as it was turned off, unlock tool if none was loaded or lock if one was
 #   loaded. Defaults to True
