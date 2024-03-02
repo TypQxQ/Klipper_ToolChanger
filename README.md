@@ -24,6 +24,9 @@ This are python modules, macros and example config for the
   </a>
 </p>
 
+Klipper Tool Changer code v.2 is progressing and will soon be released:
+https://github.com/TypQxQ/KTC
+
 At it's simplest you need to specify extruder, fan, offset for each extruder tool.
 Then add your macros for pickup, dropoff, toollock and toolunlock.
 
@@ -159,8 +162,7 @@ Reffer to the [Command Reference](./doc/command_ref.md).<br>
   - `lazy_home_when_parking` - As above
 
 ## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Example configuration
-My full and updated configuration file backup can be found here:
-https://github.com/TypQxQ/DuetBackup/tree/main/qTC-Klipper
+My corrent configuration is for v.2 where work progresses fast.
 
 ## ![#f03c15](/doc/f03c15.png) ![#c5f015](/doc/c5f015.png) ![#1589F0](/doc/1589F0.png) Updates 21/09/2023
 Added individual axis to position saving and restoring commands. Commited by viesturz.
