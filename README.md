@@ -24,7 +24,7 @@ This are python modules, macros and example config for the
   </a>
 </p>
 
-Klipper Tool Changer code v.2 is progressing and will soon be released:
+Klipper Tool Changer code v.2 is now released for preview:
 https://github.com/TypQxQ/KTC
 
 At it's simplest you need to specify extruder, fan, offset for each extruder tool.
